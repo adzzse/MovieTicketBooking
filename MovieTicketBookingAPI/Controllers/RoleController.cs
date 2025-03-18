@@ -156,7 +156,7 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ResponseModel<RoleDto>>> DeleteRole(int id)
@@ -175,7 +175,16 @@ namespace MovieTicketBookingAPI.Controllers
                 }
 
                 await _roleService.Delete(id);
-                return NoContent();
+                return Ok(new ResponseModel<RoleDto>
+                {
+                    Success = true,
+                    Data = new RoleDto 
+                    { 
+                        Id = existingRole.Id,
+                        Name = existingRole.Name
+                    },
+                    Message = "Role deleted successfully"
+                });
             }
             catch (Exception ex)
             {
