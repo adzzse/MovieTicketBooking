@@ -1,0 +1,8 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+\bin
+.csproj
+.cache
+\Debug
+\obj
+.csproj.user
+.sln
