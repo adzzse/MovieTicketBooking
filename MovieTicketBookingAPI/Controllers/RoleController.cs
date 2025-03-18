@@ -74,33 +74,118 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPost]
-        
-        public async Task<IActionResult> AddRole([FromBody] Role role)
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<RoleDto>>> AddRole([FromForm] CreateRoleDto role)
         {
-            var result = await _roleService.Add(role);
-            return CreatedAtAction(nameof(AddRole), new { id = result.Id }, result);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new ResponseModel<RoleDto>
+                    {
+                        Success = false,
+                        Error = string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)),
+                        ErrorCode = 400
+                    });
+                }
+
+                var roleEntity = new Role
+                {
+                    Name = role.Name
+                };
+
+                var result = await _roleService.Add(roleEntity);
+                var roleDto = new RoleDto
+                {
+                    Id = result.Id,
+                    Name = result.Name
+                };
+
+                return CreatedAtAction(nameof(GetRoleById), new { id = result.Id }, new ResponseModel<RoleDto>
+                {
+                    Success = true,
+                    Data = roleDto
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseModel<RoleDto>
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    ErrorCode = 500
+                });
+            }
         }
 
         [HttpPut("{id}")]
-        
-        public async Task<IActionResult> UpdateRole(int id, [FromBody] Role role)
+        [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<RoleDto>>> UpdateRole(int id, [FromBody] CreateRoleDto role)
         {
-            var existingRole = await _roleService.GetById(id);
-            if (existingRole == null) return NotFound();
+            try
+            {
+                var existingRole = await _roleService.GetById(id);
+                if (existingRole == null)
+                {
+                    return NotFound(new ResponseModel<RoleDto>
+                    {
+                        Success = false,
+                        Error = "Role not found",
+                        ErrorCode = 404
+                    });
+                }
 
-            await _roleService.Update(role);
-            return NoContent();
+                existingRole.Name = role.Name;
+                await _roleService.Update(existingRole);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseModel<RoleDto>
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    ErrorCode = 500
+                });
+            }
         }
 
         [HttpDelete("{id}")]
-        
-        public async Task<IActionResult> DeleteRole(int id)
+        [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<RoleDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<RoleDto>>> DeleteRole(int id)
         {
-            var existingRole = await _roleService.GetById(id);
-            if (existingRole == null) return NotFound();
+            try
+            {
+                var existingRole = await _roleService.GetById(id);
+                if (existingRole == null)
+                {
+                    return NotFound(new ResponseModel<RoleDto>
+                    {
+                        Success = false,
+                        Error = "Role not found",
+                        ErrorCode = 404
+                    });
+                }
 
-            await _roleService.Delete(id);
-            return NoContent();
+                await _roleService.Delete(id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseModel<RoleDto>
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    ErrorCode = 500
+                });
+            }
         }
     }
 }
