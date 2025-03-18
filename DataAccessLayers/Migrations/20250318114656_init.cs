@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace BusinessObjects.Migrations
+namespace DataAccessLayers.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -17,7 +17,7 @@ namespace BusinessObjects.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Type = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -30,7 +30,7 @@ namespace BusinessObjects.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    RoomName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    RoomName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Capacity = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -44,7 +44,7 @@ namespace BusinessObjects.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -57,7 +57,7 @@ namespace BusinessObjects.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -70,11 +70,11 @@ namespace BusinessObjects.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CategoryId = table.Column<int>(type: "int", nullable: true),
                     DateStart = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DateEnd = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Image = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    Image = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Status = table.Column<byte>(type: "tinyint", nullable: true),
                     DirectorName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true)
@@ -96,7 +96,7 @@ namespace BusinessObjects.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    SeatNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SeatNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CinemaRoomId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -116,14 +116,14 @@ namespace BusinessObjects.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Address = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
-                    Phone = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: true),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RoleId = table.Column<int>(type: "int", nullable: true),
                     Status = table.Column<byte>(type: "tinyint", nullable: true),
-                    Password = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Wallet = table.Column<float>(type: "real", nullable: false, defaultValue: 0f)
+                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Wallet = table.Column<float>(type: "real", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -175,7 +175,8 @@ namespace BusinessObjects.Migrations
                     SeatId = table.Column<int>(type: "int", nullable: false),
                     ShowtimeId = table.Column<int>(type: "int", nullable: false),
                     Price = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<byte>(type: "tinyint", nullable: true)
+                    Status = table.Column<byte>(type: "tinyint", nullable: true),
+                    Quantity = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -237,7 +238,7 @@ namespace BusinessObjects.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     BillId = table.Column<int>(type: "int", nullable: true),
                     TypeId = table.Column<int>(type: "int", nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true)
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -246,14 +247,12 @@ namespace BusinessObjects.Migrations
                         name: "FK_Transaction_Bill",
                         column: x => x.BillId,
                         principalTable: "Bills",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Transaction_Type",
+                        name: "FK_Transaction_TransactionType",
                         column: x => x.TypeId,
                         principalTable: "TransactionTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -266,23 +265,21 @@ namespace BusinessObjects.Migrations
                     Price = table.Column<int>(type: "int", nullable: false),
                     AccountId = table.Column<int>(type: "int", nullable: true),
                     Time = table.Column<DateTime>(type: "datetime2", nullable: true, defaultValueSql: "GETDATE()"),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true)
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_TransactionHistories", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Transaction_history_Account",
+                        name: "FK_TransactionHistory_Account",
                         column: x => x.AccountId,
                         principalTable: "Accounts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Transaction_history_Transaction",
+                        name: "FK_TransactionHistory_Transaction",
                         column: x => x.TransactionId,
                         principalTable: "Transactions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(

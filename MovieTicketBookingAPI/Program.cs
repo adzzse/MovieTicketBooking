@@ -61,7 +61,8 @@ builder.Services.AddScoped<BillRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 
-builder.Services.AddDbContext<MovieprojectContext> ();
+builder.Services.AddDbContext<MovieprojectContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DB")));
 
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
