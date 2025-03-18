@@ -78,28 +78,40 @@ namespace MovieTicketBookingAPI.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost("CreateAccount")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<AccountResponseBasic>>> Create([FromBody] Account account)
+        public async Task<ActionResult<ResponseModel<AccountResponseBasic>>> Create([FromBody] CreateAccountDto accountDto)
         {
-            if (account == null)
+            if (accountDto == null)
                 return BadRequest(new ResponseModel<AccountResponseBasic> { Success = false, Error = "Invalid account data", ErrorCode = 400 });
             try
             {
+                var account = new Account
+                {
+                    Name = accountDto.Name,
+                    Email = accountDto.Email,
+                    Password = accountDto.Password,
+                    Address = accountDto.Address,
+                    Phone = accountDto.Phone,
+                    RoleId = accountDto.RoleId,
+                    Status = accountDto.Status,
+                    Wallet = accountDto.Wallet
+                };
+
                 var createdAccount = await _accountService.Add(account);
                 var accountResponse = new AccountResponseBasic
                 {
-                    Id = account.Id,
-                    Name = account.Name,
-                    Address = account.Address,
-                    Phone = account.Phone,
+                    Id = createdAccount.Id,
+                    Name = createdAccount.Name,
+                    Address = createdAccount.Address,
+                    Phone = createdAccount.Phone,
                     Role = "Anonymous",
-                    Status = account.Status,
-                    Email = account.Email,
-                    Wallet = account.Wallet
+                    Status = createdAccount.Status,
+                    Email = createdAccount.Email,
+                    Wallet = createdAccount.Wallet
                 };
                 return CreatedAtAction(nameof(GetById), new { id = createdAccount.Id }, new ResponseModel<AccountResponseBasic> { Success = true, Data = accountResponse });
             }
