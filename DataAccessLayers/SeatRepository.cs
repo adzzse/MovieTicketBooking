@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DataAccessLayers
 {
-    public class SeatRepository(Prn221projectContext context) : GenericRepository<Seat>(context)
+    public class SeatRepository(MovieprojectContext context) : GenericRepository<Seat>(context)
     {
         public async Task<IEnumerable<SeatDto>> GetAvailableSeatsByShowtimeId(int showtimeId, int movieId)
         {

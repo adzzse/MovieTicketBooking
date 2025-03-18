@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessLayers
 {
-    public class AccountRepository(Prn221projectContext context) : GenericRepository<Account>(context)
+    public class AccountRepository(MovieprojectContext context) : GenericRepository<Account>(context)
     {
         public async Task<List<Account>> GetAllName()
         {

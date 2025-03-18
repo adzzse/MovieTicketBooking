@@ -2,9 +2,9 @@
 
 namespace DataAccessLayers.UnitOfWork
 {
-    public class UnitOfWork(Prn221projectContext context) : IUnitOfWork
+    public class UnitOfWork(MovieprojectContext context) : IUnitOfWork
     {
-        private readonly Prn221projectContext _projectContext = context;
+        private readonly MovieprojectContext _projectContext = context;
         private CategoryRepository categoryRepository;
         private AccountRepository accountRepository;
         private MovieRepository eventRepository;

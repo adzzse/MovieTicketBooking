@@ -2,7 +2,7 @@
 
 namespace DataAccessLayers
 {
-    public class BillRepository(Prn221projectContext context) : GenericRepository<Bill>(context)
+    public class BillRepository(MovieprojectContext context) : GenericRepository<Bill>(context)
     {
     }
 }

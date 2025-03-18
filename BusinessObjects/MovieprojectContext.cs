@@ -5,17 +5,17 @@ using Microsoft.Extensions.Configuration;
 
 namespace BusinessObjects;
 
-public class Prn221projectContext : DbContext
+public class MovieprojectContext : DbContext
 {
     private readonly string _connectionString;
     private readonly IConfiguration? configuration;
     
-    public Prn221projectContext()
+    public MovieprojectContext()
     {
         _connectionString = "Server=(local);uid=sa;pwd=123456789;database=TicketMovieBooking;TrustServerCertificate=True";
     }
 
-    public Prn221projectContext(DbContextOptions<Prn221projectContext> options, IConfiguration configuration)
+    public MovieprojectContext(DbContextOptions<MovieprojectContext> options, IConfiguration configuration)
         : base(options)
     {
         this.configuration = configuration;

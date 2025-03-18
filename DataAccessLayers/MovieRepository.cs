@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DataAccessLayers
 {
-    public class MovieRepository(Prn221projectContext context) : GenericRepository<Movie>(context)
+    public class MovieRepository(MovieprojectContext context) : GenericRepository<Movie>(context)
     {
         public async Task<IEnumerable<Movie>> GetAllIncludeType()
         {

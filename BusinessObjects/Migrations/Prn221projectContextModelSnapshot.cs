@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace BusinessObjects.Migrations
 {
-    [DbContext(typeof(Prn221projectContext))]
-    partial class Prn221projectContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(MovieprojectContext))]
+    partial class MovieprojectContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {

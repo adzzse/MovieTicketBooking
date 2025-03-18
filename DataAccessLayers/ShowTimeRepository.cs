@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DataAccessLayers
 {
-    public class ShowTimeRepository(Prn221projectContext context) : GenericRepository<ShowTime>(context)
+    public class ShowTimeRepository(MovieprojectContext context) : GenericRepository<ShowTime>(context)
     {
         public async Task<List<ShowtimeDto>> GetShowtimesByMovieId(int movieId)
         {

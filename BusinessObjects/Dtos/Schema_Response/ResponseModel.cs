@@ -21,6 +21,9 @@ namespace BusinessObjects.Dtos.Schema_Response
         [JsonPropertyName("errorCode")]
         public int ErrorCode { get; set; }
 
+        [JsonPropertyName("message")]
+        public string? Message { get; set; }
+
         public ResponseModel() => Success = true;
     }
 }

@@ -9,7 +9,7 @@ namespace DataAccessLayers
 {
     public class TransactionTypeRepository : GenericRepository<TransactionType>
     {
-        public TransactionTypeRepository(Prn221projectContext context) : base(context)
+        public TransactionTypeRepository(MovieprojectContext context) : base(context)
         {
         }
     }

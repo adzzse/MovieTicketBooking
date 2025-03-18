@@ -4,9 +4,9 @@ using System.Linq.Expressions;
 
 namespace DataAccessLayers
 {
-    public class GenericRepository<T>(Prn221projectContext context) where T : class
+    public class GenericRepository<T>(MovieprojectContext context) where T : class
     {
-        protected readonly Prn221projectContext _context = context;
+        protected readonly MovieprojectContext _context = context;
 
         public async Task<T?> GetByIdAsync(int id)
         {

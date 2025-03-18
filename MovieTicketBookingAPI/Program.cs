@@ -61,7 +61,7 @@ builder.Services.AddScoped<BillRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 
-builder.Services.AddDbContext<Prn221projectContext> ();
+builder.Services.AddDbContext<MovieprojectContext> ();
 
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -121,7 +121,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope()) {
-    var context = scope.ServiceProvider.GetRequiredService<Prn221projectContext>();
+    var context = scope.ServiceProvider.GetRequiredService<MovieprojectContext>();
     context.Database.Migrate();
 }
 

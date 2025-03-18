@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessLayers
 {
-    public class CategoryRepository(Prn221projectContext context) : GenericRepository<Category>(context)
+    public class CategoryRepository(MovieprojectContext context) : GenericRepository<Category>(context)
     {
         public async Task<Category?> GetByCateName(string name)
         {

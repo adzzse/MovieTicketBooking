@@ -11,7 +11,7 @@ namespace DataAccessLayers
 {
     public class TransactionHistoryRepository : GenericRepository<TransactionHistory>
     {
-        public TransactionHistoryRepository(Prn221projectContext context) : base(context)
+        public TransactionHistoryRepository(MovieprojectContext context) : base(context)
         {
         }
 
