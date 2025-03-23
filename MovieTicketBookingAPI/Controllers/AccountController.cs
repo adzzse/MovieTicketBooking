@@ -2,7 +2,6 @@
 using BusinessObjects.Dtos.Account;
 using BusinessObjects.Dtos.Auth;
 using BusinessObjects.Dtos.Schema_Response;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interface;
 using Services.Service;
@@ -12,7 +11,6 @@ namespace MovieTicketBookingAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class AccountController(IAccountService accountService, IAuthService authService) : ControllerBase
     {
         private readonly IAccountService _accountService = accountService;
@@ -20,14 +18,26 @@ namespace MovieTicketBookingAPI.Controllers
 
         #region Account Management Endpoints
         [HttpGet]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<IEnumerable<AccountResponseBasic>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<AccountResponseBasic>>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<IEnumerable<AccountResponseBasic>>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ResponseModel<IEnumerable<AccountResponseBasic>>>> GetAll()
         {
             try
             {
                 var accounts = await _accountService.GetAllIncludeAsync();
+                
+                // Check if accounts list is empty and return 404 if it is
+                if (accounts == null || !accounts.Any())
+                {
+                    return NotFound(new ResponseModel<IEnumerable<AccountResponseBasic>> 
+                    { 
+                        Success = false, 
+                        Error = "No accounts found", 
+                        ErrorCode = 404 
+                    });
+                }
+                
                 var accountResponses = accounts.Select(account => new AccountResponseBasic
                 {
                     Id = account.Id,
@@ -79,7 +89,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPost("CreateAccount")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status500InternalServerError)]
@@ -122,7 +131,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status404NotFound)]
@@ -184,7 +192,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status500InternalServerError)]
@@ -289,11 +296,8 @@ namespace MovieTicketBookingAPI.Controllers
                 return StatusCode(500, new ResponseModel<UserUpdateWalletDto> { Success = false, Error = ex.Message, ErrorCode = 500 });
             }
         }
-        #endregion
 
-        #region System Account Endpoints
         [HttpPost("validation")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status500InternalServerError)]

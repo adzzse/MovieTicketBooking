@@ -18,7 +18,7 @@ namespace MovieTicketBookingAPI.Controllers
         {
             try
             {
-                var movie = await _movieService.GetById(id);
+                var movie = await _movieService.GetByIdIncludeType(id);
                 if (movie == null)
                 {
                     return NotFound(new ResponseModel<MovieDto>
@@ -39,6 +39,8 @@ namespace MovieTicketBookingAPI.Controllers
                     Status = movie.Status ?? 0,
                     DirectorName = movie.DirectorName,
                     Description = movie.Description,
+                    CategoryId = movie.CategoryId,
+                    CategoryName = movie.Category?.Type,
                     Showtime = movie.Tickets.Select(ticket => ticket.Showtime?.ShowDateTime.ToString("g")).ToList()
                 };
 
@@ -64,7 +66,7 @@ namespace MovieTicketBookingAPI.Controllers
         {
             try
             {
-                var movies = await _movieService.GetAll();
+                var movies = await _movieService.GetAllIncludeType();
                 if (movies == null || !movies.Any())
                 {
                     return NotFound(new ResponseModel<IEnumerable<MovieDto>>
@@ -85,6 +87,8 @@ namespace MovieTicketBookingAPI.Controllers
                     Status = movie.Status ?? 0,
                     DirectorName = movie.DirectorName,
                     Description = movie.Description,
+                    CategoryId = movie.CategoryId,
+                    CategoryName = movie.Category?.Type,
                     Showtime = movie.Tickets.Select(ticket => ticket.Showtime?.ShowDateTime.ToString("g")).ToList()
                 }).ToList();
 

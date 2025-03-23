@@ -2,7 +2,6 @@
 using BusinessObjects.Dtos.Schema_Response;
 using BusinessObjects.Dtos.Ticket;
 using BusinessObjects.Dtos.TransactionHistory;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Client;
 using Services.Interface;
@@ -70,7 +69,6 @@ namespace MovieTicketBookingAPI.Controllers
         //}
 
         [HttpGet("list/account")]
-        [Authorize]
         public async Task<ActionResult<ResponseModel<IEnumerable<TransactionHistoryDto>>>> GetAllTransactionHistoryByAccountId()
         {
             var account = await _authService.GetUserByClaims(HttpContext.User);

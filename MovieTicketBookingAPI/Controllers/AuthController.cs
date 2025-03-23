@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using BusinessObjects.Dtos.Auth;
 using BusinessObjects;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interface;
 using BusinessObjects.Dtos.Schema_Response;
@@ -75,7 +74,6 @@ namespace MovieTicketBookingAPI.Controllers
 
         #region User Profile Endpoints
         [HttpGet("who-am-i")]
-        [Authorize]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ResponseModel<AccountResponseBasic>>> WhoAmI()

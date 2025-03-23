@@ -1,7 +1,6 @@
 ﻿using BusinessObjects;
 using BusinessObjects.Dtos.Bill;
 using BusinessObjects.Dtos.Schema_Response;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interface;
 using System.Security.Claims;
@@ -15,7 +14,6 @@ namespace MovieTicketBookingAPI.Controllers
 
     [ApiController]
     [Route("api/bills")]
-    [Authorize]
     public class BillController(IBillService billService, IAuthService authService) : ControllerBase
     {
         private readonly IBillService _billService = billService;
@@ -23,12 +21,26 @@ namespace MovieTicketBookingAPI.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(ResponseModel<IEnumerable<Bill>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<Bill>>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<IEnumerable<Bill>>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ResponseModel<IEnumerable<Bill>>>> GetAll()
         {
             try
             {
                 var bills = await _billService.GetAll();
+                
+                // Check if bills list is empty and return 404 if it is
+                if (bills == null || !bills.Any())
+                {
+                    return NotFound(new ResponseModel<IEnumerable<Bill>>()
+                    {
+                        Data = null,
+                        Error = "No bills found",
+                        Success = false,
+                        ErrorCode = 404
+                    });
+                }
+                
                 return Ok(new ResponseModel<IEnumerable<Bill>>()
                 {
                     Data = bills,
@@ -153,7 +165,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status500InternalServerError)]
@@ -238,7 +249,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status500InternalServerError)]
@@ -279,7 +289,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status500InternalServerError)]

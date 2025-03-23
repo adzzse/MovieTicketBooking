@@ -1,7 +1,6 @@
 ﻿using BusinessObjects;
 using BusinessObjects.Dtos.Schema_Response;
 using BusinessObjects.Dtos.Ticket;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interface;
 using System.Net.Sockets;
@@ -10,19 +9,31 @@ namespace MovieTicketBookingAPI.Controllers
 {
     [Route("api/transactiontypes")]
     [ApiController]
-    [Authorize]
     public class TransactionTypeController(ITransactionTypeService transactionTypeService) : ControllerBase
     {
         private readonly ITransactionTypeService _transactionTypeService = transactionTypeService;
 
         [HttpGet]
         [ProducesResponseType(typeof(ResponseModel<IEnumerable<TransactionType>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<TransactionType>>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<IEnumerable<TransactionType>>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ResponseModel<IEnumerable<TransactionType>>>> GetAll()
         {
             try
             {
                 var transactionTypes = await _transactionTypeService.GetAll();
+                
+                // Check if transaction types list is empty and return 404 if it is
+                if (transactionTypes == null || !transactionTypes.Any())
+                {
+                    return NotFound(new ResponseModel<IEnumerable<TransactionType>>
+                    {
+                        Success = false,
+                        Error = "No transaction types found",
+                        ErrorCode = 404
+                    });
+                }
+                
                 return Ok(new ResponseModel<IEnumerable<TransactionType>>
                 {
                     Success = true,
@@ -80,7 +91,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<TransactionType>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ResponseModel<TransactionType>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<TransactionType>), StatusCodes.Status500InternalServerError)]
@@ -110,7 +120,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<TransactionType>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<TransactionType>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<TransactionType>), StatusCodes.Status500InternalServerError)]
@@ -149,7 +158,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<TransactionType>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<TransactionType>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<TransactionType>), StatusCodes.Status500InternalServerError)]

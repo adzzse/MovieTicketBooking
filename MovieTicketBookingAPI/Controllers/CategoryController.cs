@@ -1,6 +1,5 @@
 ﻿using BusinessObjects;
 using BusinessObjects.Dtos.Schema_Response;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interface;
 using Services.Service;
@@ -15,12 +14,26 @@ namespace MovieTicketBookingAPI.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(ResponseModel<IEnumerable<Category>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<Category>>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<IEnumerable<Category>>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ResponseModel<IEnumerable<Category>>>> GetAll()
         {
             try
             {
                 var categories = await _categoryService.GetAll();
+                
+                // Check if categories list is empty and return 404 if it is
+                if (categories == null || !categories.Any())
+                {
+                    return NotFound(new ResponseModel<IEnumerable<Category>>()
+                    {
+                        Data = null,
+                        Error = "No categories found",
+                        Success = false,
+                        ErrorCode = 404
+                    });
+                }
+                
                 return Ok(new ResponseModel<IEnumerable<Category>>()
                 {
                     Data = categories,
@@ -116,7 +129,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status500InternalServerError)]
@@ -147,7 +159,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status500InternalServerError)]
@@ -188,7 +199,6 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status500InternalServerError)]
