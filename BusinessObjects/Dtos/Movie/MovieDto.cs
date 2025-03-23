@@ -16,6 +16,8 @@ namespace BusinessObjects.Dtos.Movie
         public byte Status { get; set; }
         public string DirectorName { get; set; }
         public string Description { get; set; }
+        public int? CategoryId { get; set; }
+        public string CategoryName { get; set; }
         public List<string> Showtime { get; set; }
     }
 }

@@ -14,5 +14,10 @@ namespace Services.Service
         {
             return await _unitOfWork.EventRepository.GetAllIncludeType();
         }
+        
+        public async Task<Movie> GetByIdIncludeType(int id)
+        {
+            return await _unitOfWork.EventRepository.GetByIdIncludeType(id);
+        }
     }
 }

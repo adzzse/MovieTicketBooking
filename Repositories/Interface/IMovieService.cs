@@ -11,5 +11,8 @@ namespace Services.Interface
     {
         //Task<IEnumerable<Movie>> GetAllInclude();
         Task<IEnumerable<Movie>> GetAllIncludeType();
+        
+        // Add a method to get a movie by ID with the Category included
+        Task<Movie> GetByIdIncludeType(int id);
     }
 }

@@ -14,5 +14,14 @@ namespace DataAccessLayers
         {
             return await _context.Movies.Include(a => a.Category).ToListAsync();
         }
+        
+        public async Task<Movie> GetByIdIncludeType(int id)
+        {
+            return await _context.Movies
+                .Include(a => a.Category)
+                .Include(a => a.Tickets)
+                    .ThenInclude(t => t.Showtime)
+                .FirstOrDefaultAsync(m => m.Id == id);
+        }
     }
 }
