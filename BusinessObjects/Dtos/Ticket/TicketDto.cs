@@ -17,7 +17,5 @@ namespace BusinessObjects.Dtos.Ticket
         public int? Price { get; set; }
 
         public byte? Status { get; set; }
-
-        public int? Quantity { get; set; }
     }
 }

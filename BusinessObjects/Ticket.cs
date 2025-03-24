@@ -11,7 +11,6 @@ public class Ticket
     public int ShowtimeId { get; set; }
     public int Price { get; set; }
     public byte? Status { get; set; }
-    public int Quantity { get; set; }
 
     public virtual Movie? Movie { get; set; }
     public virtual Seat? Seat { get; set; }

@@ -15,9 +15,9 @@ namespace Services.Service
     {
         public async Task<int?> CountQuantityPeopleJoinEvent(Movie eventName)
         {
-            var totalQuantity = eventName.Tickets.Sum(t => t.Quantity);
+            var totalTickets = eventName.Tickets.Count();
             var currentTicket = await _unitOfWork.TicketRepository.GetRemainingTicketsForEvent(eventName.Id);
-            return totalQuantity - currentTicket;
+            return totalTickets - currentTicket;
         }
 
         public async Task<List<Ticket>> GetByMovieIdAsync(int eventId)

@@ -34,12 +34,11 @@ namespace MovieTicketBookingAPI.Controllers
                 {
                     Id = ticket.Id,
                     SeatId = ticket.SeatId,
-                    SeatName = ticket.Seat.SeatNumber ?? "null",
-                    MovieName = ticket.Movie.Name ?? "null",
-                    ShowDateTime = ticket.Showtime.ShowDateTime,
+                    SeatName = ticket.Seat?.SeatNumber ?? "Unknown",
+                    MovieName = ticket.Movie?.Name,
+                    ShowDateTime = ticket.Showtime?.ShowDateTime ?? DateTime.MinValue,
                     Price = ticket.Price,
-                    Status = ticket.Status,
-                    Quantity = ticket.Quantity,
+                    Status = ticket.Status
                 };
                 return Ok(new ResponseModel<TicketDto>
                 {
@@ -63,12 +62,11 @@ namespace MovieTicketBookingAPI.Controllers
                 {
                     Id = ticket.Id,
                     SeatId = ticket.SeatId,
-                    SeatName = ticket.Seat.SeatNumber ?? "null",
-                    MovieName = ticket.Movie.Name ?? "null",
-                    ShowDateTime = ticket.Showtime.ShowDateTime,
+                    SeatName = ticket.Seat?.SeatNumber ?? "Unknown",
+                    MovieName = ticket.Movie?.Name,
+                    ShowDateTime = ticket.Showtime?.ShowDateTime ?? DateTime.MinValue,
                     Price = ticket.Price,
-                    Status = ticket.Status,
-                    Quantity = ticket.Quantity,
+                    Status = ticket.Status
                 });
                 return Ok(new ResponseModel<IEnumerable<TicketDto>>
                 {
@@ -97,12 +95,11 @@ namespace MovieTicketBookingAPI.Controllers
                 {
                     Id = ticket.Id,
                     SeatId = ticket.SeatId,
-                    SeatName = ticket.Seat.SeatNumber ?? "null",
-                    MovieName = ticket.Movie.Name ?? "null",
-                    ShowDateTime = ticket.Showtime.ShowDateTime,
+                    SeatName = ticket.Seat?.SeatNumber ?? "Unknown",
+                    MovieName = ticket.Movie?.Name,
+                    ShowDateTime = ticket.Showtime?.ShowDateTime ?? DateTime.MinValue,
                     Price = ticket.Price,
-                    Status = ticket.Status,
-                    Quantity = ticket.Quantity,
+                    Status = ticket.Status
                 });
                 return Ok(new ResponseModel<IEnumerable<TicketDto>>
                 {
