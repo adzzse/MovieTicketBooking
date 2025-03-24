@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Services.Interface;
 using Services.Service;
 using System.Net;
+using System.IO;
 
 namespace MovieTicketBookingAPI.Controllers
 {
@@ -27,13 +28,16 @@ namespace MovieTicketBookingAPI.Controllers
             {
                 var accounts = await _accountService.GetAllIncludeAsync();
                 
+                // Filter accounts to only include those with Status = 1 (active)
+                accounts = accounts.Where(a => a.Status == 1).ToList();
+                
                 // Check if accounts list is empty and return 404 if it is
                 if (accounts == null || !accounts.Any())
                 {
                     return NotFound(new ResponseModel<IEnumerable<AccountResponseBasic>> 
                     { 
                         Success = false, 
-                        Error = "No accounts found", 
+                        Error = "No active accounts found", 
                         ErrorCode = 404 
                     });
                 }
@@ -68,6 +72,11 @@ namespace MovieTicketBookingAPI.Controllers
                 var account = await _accountService.GetAccountByIdIncludeAsync(id);
                 if (account == null)
                     return NotFound(new ResponseModel<AccountResponseBasic> { Success = false, Error = "Account not found", ErrorCode = 404 });
+                
+                // Check if account is active (Status = 1)
+                if (account.Status != 1)
+                    return NotFound(new ResponseModel<AccountResponseBasic> { Success = false, Error = "Account is inactive", ErrorCode = 404 });
+                
                 var accountResponse = new AccountResponseBasic
                 {
                     Id = account.Id,
@@ -92,7 +101,7 @@ namespace MovieTicketBookingAPI.Controllers
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<AccountResponseBasic>>> Create([FromBody] CreateAccountDto accountDto)
+        public async Task<ActionResult<ResponseModel<AccountResponseBasic>>> Create([FromForm] CreateAccountDto accountDto)
         {
             if (accountDto == null)
                 return BadRequest(new ResponseModel<AccountResponseBasic> { Success = false, Error = "Invalid account data", ErrorCode = 400 });
@@ -106,18 +115,22 @@ namespace MovieTicketBookingAPI.Controllers
                     Address = accountDto.Address,
                     Phone = accountDto.Phone,
                     RoleId = accountDto.RoleId,
-                    Status = accountDto.Status,
+                    Status = 1,
                     Wallet = accountDto.Wallet
                 };
 
                 var createdAccount = await _accountService.Add(account);
+                
+                // Fetch the complete account with role information
+                var completeAccount = await _accountService.GetAccountByIdIncludeAsync(createdAccount.Id);
+                
                 var accountResponse = new AccountResponseBasic
                 {
                     Id = createdAccount.Id,
                     Name = createdAccount.Name,
                     Address = createdAccount.Address,
                     Phone = createdAccount.Phone,
-                    Role = "Anonymous",
+                    Role = completeAccount?.Role?.Name ?? "Unknown",
                     Status = createdAccount.Status,
                     Email = createdAccount.Email,
                     Wallet = createdAccount.Wallet
@@ -203,19 +216,25 @@ namespace MovieTicketBookingAPI.Controllers
                 if (existingAccount == null)
                     return NotFound(new ResponseModel<AccountResponseBasic> { Success = false, Error = "Account not found", ErrorCode = 404 });
 
+                // Set status to 0
+                existingAccount.Status = 0;
+                await _accountService.Update(existingAccount);
+
+                // Fetch the complete account with role information
+                var completeAccount = await _accountService.GetAccountByIdIncludeAsync(existingAccount.Id);
+                
                 var accountResponse = new AccountResponseBasic
                 {
                     Id = existingAccount.Id,
                     Name = existingAccount.Name,
                     Address = existingAccount.Address,
                     Phone = existingAccount.Phone,
-                    Role = "Anonymous",
+                    Role = completeAccount?.Role?.Name ?? "Unknown",
                     Status = existingAccount.Status,
                     Email = existingAccount.Email,
                     Wallet = existingAccount.Wallet
                 };
 
-                await _accountService.Delete(id);
                 return Ok(new ResponseModel<AccountResponseBasic> { Success = true, Data = accountResponse });
             }
             catch (Exception ex)
@@ -226,20 +245,19 @@ namespace MovieTicketBookingAPI.Controllers
         #endregion
 
         #region User Profile Endpoints
-        [HttpPut("profile")]
+        [HttpPut("profile/{userId}")]
         [ProducesResponseType(typeof(ResponseModel<UserDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<UserDto>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<UserDto>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<UserDto>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<UserDto>>> UpdateUser([FromBody] UserDto account)
+        public async Task<ActionResult<ResponseModel<UserDto>>> UpdateUser(int userId, [FromBody] UserDto account)
         {
-            var accountUser = await _authService.GetUserByClaims(HttpContext.User);
             if (account == null)
                 return BadRequest(new ResponseModel<UserDto> { Success = false, Error = "Invalid account data", ErrorCode = 400 });
 
             try
             {
-                var existingAccount = await _accountService.GetById(accountUser.Id);
+                var existingAccount = await _accountService.GetById(userId);
                 if (existingAccount == null)
                     return NotFound(new ResponseModel<UserDto> { Success = false, Error = "Account not found", ErrorCode = 404 });
 
@@ -265,19 +283,18 @@ namespace MovieTicketBookingAPI.Controllers
             }
         }
 
-        [HttpPut("wallet")]
+        [HttpPut("wallet/{userId}")]
         [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<UserUpdateWalletDto>>> UpdateWallet([FromQuery] double wallet)
+        public async Task<ActionResult<ResponseModel<UserUpdateWalletDto>>> UpdateWallet(int userId, [FromQuery] double wallet)
         {
-            var accountUser = await _authService.GetUserByClaims(HttpContext.User);
             if (wallet < 0)
                 return BadRequest(new ResponseModel<UserUpdateWalletDto> { Success = false, Error = "Invalid number", ErrorCode = 400 });
             try
             {
-                var existingAccount = await _accountService.GetById(accountUser.Id);
+                var existingAccount = await _accountService.GetById(userId);
                 if (existingAccount == null)
                     return NotFound(new ResponseModel<UserUpdateWalletDto> { Success = false, Error = "Account not found", ErrorCode = 404 });
                 existingAccount.Wallet += (float)wallet;
@@ -297,35 +314,61 @@ namespace MovieTicketBookingAPI.Controllers
             }
         }
 
-        [HttpPost("validation")]
-        [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ResponseModel<AccountResponseBasic>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<AccountResponseBasic>>> GetSystemAccountByEmailAndPassword([FromQuery] string email, [FromQuery] string password)
+        [HttpPut("wallet/update")]
+        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<UserUpdateWalletDto>>> UpdateWalletById([FromBody] UpdateWalletRequestDto request)
         {
+            if (request.Amount < 0)
+                return BadRequest(new ResponseModel<UserUpdateWalletDto> 
+                { 
+                    Success = false, 
+                    Error = "Amount cannot be negative", 
+                    ErrorCode = 400 
+                });
+                
             try
             {
-                var account = await _accountService.GetSystemAccountByEmailAndPassword(email, password);
-                if (account == null)
-                    return BadRequest(new ResponseModel<AccountResponseBasic> { Success = false, Error = "Invalid credentials", ErrorCode = 400 });
-
-                var accountResponse = new AccountResponseBasic
+                var updatedAccount = await _accountService.UpdateWalletBalance(request.UserId, request.Amount);
+                
+                if (updatedAccount == null)
                 {
-                    Id = account.Id,
-                    Name = account.Name,
-                    Address = account.Address,
-                    Phone = account.Phone,
-                    Role = account.Role.Name,
-                    Status = account.Status,
-                    Email = account.Email,
-                    Wallet = account.Wallet
+                    return NotFound(new ResponseModel<UserUpdateWalletDto> 
+                    { 
+                        Success = false, 
+                        Error = $"Account with ID {request.UserId} not found", 
+                        ErrorCode = 404 
+                    });
+                }
+                
+                // Get account with role information
+                var accountWithRole = await _accountService.GetAccountByIdIncludeAsync(updatedAccount.Id);
+                
+                var walletUpdateDto = new UserUpdateWalletDto
+                {
+                    Id = updatedAccount.Id,
+                    Name = updatedAccount.Name,
+                    Wallet = updatedAccount.Wallet
                 };
-
-                return Ok(new ResponseModel<AccountResponseBasic> { Success = true, Data = accountResponse });
+                
+                return Ok(new ResponseModel<UserUpdateWalletDto> 
+                { 
+                    Success = true, 
+                    Data = walletUpdateDto,
+                    Error = null,
+                    ErrorCode = 200
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<AccountResponseBasic> { Success = false, Error = ex.Message, ErrorCode = 500 });
+                return StatusCode(500, new ResponseModel<UserUpdateWalletDto> 
+                { 
+                    Success = false, 
+                    Error = ex.Message, 
+                    ErrorCode = 500 
+                });
             }
         }
         #endregion

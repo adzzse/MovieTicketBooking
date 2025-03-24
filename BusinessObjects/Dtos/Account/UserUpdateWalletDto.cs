@@ -13,4 +13,10 @@ namespace BusinessObjects.Dtos.Account
         public string? Name { get; set; }
         public double? Wallet { get; set; }
     }
+    
+    public class UpdateWalletRequestDto
+    {
+        public int UserId { get; set; }
+        public float Amount { get; set; }
+    }
 }

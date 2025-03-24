@@ -118,25 +118,6 @@ namespace MovieTicketBookingAPI.Controllers
             }
         }
 
-        //[HttpPost("CountPeopleInMovie")]
-        //public async Task<ActionResult<ResponseModel<CountRemainingTickets>>> CountQuantityPeopleJoinEvent([FromBody] Movie eventName)
-        //{
-        //    try
-        //    {
-        //        var result = await _ticketService.CountQuantityPeopleJoinEvent(eventName);
-        //        return Ok(new { remainingTickets = result });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new ResponseModel<IEnumerable<CountRemainingTickets>>
-        //        {
-        //            Success = false,
-        //            Error = ex.Message,
-        //            ErrorCode = 500
-        //        });
-        //    }
-        //}
-
         [HttpPost]
         
         public async Task<IActionResult> AddTicket([FromBody] Ticket ticket)

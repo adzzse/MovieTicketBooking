@@ -37,5 +37,21 @@ namespace Services.Service
 
         public async Task<Account?> GetAccountByIdIncludeAsync(int id) => await _unitOfWork.AccountRepository.GetAccountByIdIncludeAsync(id);
         public async Task<IEnumerable<Account>> GetAllIncludeAsync() => await _unitOfWork.AccountRepository.GetAllIncludeAsync();
+        
+        public async Task<Account?> UpdateWalletBalance(int userId, float amount)
+        {
+            var account = await _unitOfWork.AccountRepository.GetByIdAsync(userId);
+            
+            if (account == null)
+                return null;
+                
+            // Simply add the amount to the wallet
+            account.Wallet += amount;
+            
+            await _unitOfWork.AccountRepository.UpdateAsync(account);
+            await _unitOfWork.SaveChangesAsync();
+            
+            return account;
+        }
     }
 }

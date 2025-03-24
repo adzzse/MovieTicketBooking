@@ -14,5 +14,6 @@ namespace Services.Interface
         Task<Account?> GetSystemAccountByEmailAndPassword(string email, string password);
         Task<Account?> GetAccountByIdIncludeAsync(int id);
         Task<IEnumerable<Account>> GetAllIncludeAsync();
+        Task<Account?> UpdateWalletBalance(int userId, float amount);
     }
 }
