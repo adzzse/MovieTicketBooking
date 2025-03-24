@@ -283,7 +283,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
         }
 
-        [HttpPut("wallet/{userId}")]
+        [HttpPut("wallet/setCash")]
         [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status404NotFound)]
@@ -314,7 +314,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
         }
 
-        [HttpPut("wallet/update")]
+        [HttpPut("wallet/addCash")]
         [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status404NotFound)]

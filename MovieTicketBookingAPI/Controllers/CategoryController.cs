@@ -1,4 +1,5 @@
 ﻿using BusinessObjects;
+using BusinessObjects.Dtos.Category;
 using BusinessObjects.Dtos.Schema_Response;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interface;
@@ -13,30 +14,32 @@ namespace MovieTicketBookingAPI.Controllers
         private readonly ICategoryService _categoryService = categoryService;
 
         [HttpGet]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<Category>>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<Category>>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<Category>>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<IEnumerable<Category>>>> GetAll()
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<CategoryDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<CategoryDto>>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<CategoryDto>>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<IEnumerable<CategoryDto>>>> GetAll()
         {
             try
             {
                 var categories = await _categoryService.GetAll();
-                
-                // Check if categories list is empty and return 404 if it is
                 if (categories == null || !categories.Any())
-                {
-                    return NotFound(new ResponseModel<IEnumerable<Category>>()
+                    return NotFound(new ResponseModel<IEnumerable<CategoryDto>>()
                     {
                         Data = null,
-                        Error = "No categories found",
+                        Error = "Not found any categories!",
                         Success = false,
                         ErrorCode = 404
                     });
-                }
-                
-                return Ok(new ResponseModel<IEnumerable<Category>>()
+
+                var categoryDtos = categories.Select(c => new CategoryDto
                 {
-                    Data = categories,
+                    Id = c.Id,
+                    Type = c.Type
+                }).ToList();
+
+                return Ok(new ResponseModel<IEnumerable<CategoryDto>>()
+                {
+                    Data = categoryDtos,
                     Error = null,
                     Success = true,
                     ErrorCode = 200
@@ -44,7 +47,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<IEnumerable<Category>>()
+                return StatusCode(500, new ResponseModel<IEnumerable<CategoryDto>>()
                 {
                     Data = null,
                     Error = ex.Message,
@@ -55,25 +58,32 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<Category>>> GetById(int id)
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<CategoryDto>>> GetById(int id)
         {
             try
             {
                 var category = await _categoryService.GetById(id);
-                if (category == null) 
-                    return NotFound(new ResponseModel<Category>()
+                if (category == null)
+                    return NotFound(new ResponseModel<CategoryDto>()
                     {
                         Data = null,
                         Error = $"Not found category with id {id}",
                         Success = false,
                         ErrorCode = 404
                     });
-                return Ok(new ResponseModel<Category>()
+                    
+                var categoryDto = new CategoryDto
                 {
-                    Data = category,
+                    Id = category.Id,
+                    Type = category.Type
+                };
+
+                return Ok(new ResponseModel<CategoryDto>()
+                {
+                    Data = categoryDto,
                     Error = null,
                     Success = true,
                     ErrorCode = 200
@@ -81,7 +91,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<Category>()
+                return StatusCode(500, new ResponseModel<CategoryDto>()
                 {
                     Data = null,
                     Error = ex.Message,
@@ -92,25 +102,30 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpGet("search/{name}")]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<Category>>> GetByName(string name)
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<CategoryDto>>> GetByName(string name)
         {
             try
             {
                 var category = await _categoryService.getByCateName(name);
                 if (category == null) 
-                    return NotFound(new ResponseModel<Category>()
+                    return NotFound(new ResponseModel<CategoryDto>()
                     {
                         Data = null,
                         Error = $"Not found category with name {name}",
                         Success = false,
                         ErrorCode = 404
                     });
-                return Ok(new ResponseModel<Category>()
+                var categoryDto = new CategoryDto
                 {
-                    Data = category,
+                    Id = category.Id,
+                    Type = category.Type
+                };
+                return Ok(new ResponseModel<CategoryDto>()
+                {
+                    Data = categoryDto,
                     Error = null,
                     Success = true,
                     ErrorCode = 200
@@ -118,7 +133,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<Category>()
+                return StatusCode(500, new ResponseModel<CategoryDto>()
                 {
                     Data = null,
                     Error = ex.Message,
@@ -129,18 +144,25 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPost]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status201Created)]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<Category>>> Create([FromBody] Category category)
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<CategoryDto>>> Create([FromBody] Category category)
         {
             try
             {
                 var createdCategory = await _categoryService.Add(category);
-                return CreatedAtAction(nameof(GetById), new { id = createdCategory.Id }, 
-                    new ResponseModel<Category>()
+                
+                var categoryDto = new CategoryDto
+                {
+                    Id = createdCategory.Id,
+                    Type = createdCategory.Type
+                };
+                
+                return CreatedAtAction(nameof(GetById), new { id = createdCategory.Id },
+                    new ResponseModel<CategoryDto>()
                     {
-                        Data = createdCategory,
+                        Data = categoryDto,
                         Error = null,
                         Success = true,
                         ErrorCode = 201
@@ -148,7 +170,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<Category>()
+                return StatusCode(500, new ResponseModel<CategoryDto>()
                 {
                     Data = null,
                     Error = ex.Message,
@@ -159,16 +181,16 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<Category>>> Update(int id, [FromBody] Category category)
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<CategoryDto>>> Update(int id, [FromBody] Category category)
         {
             try
             {
                 var existingCategory = await _categoryService.GetById(id);
-                if (existingCategory == null) 
-                    return NotFound(new ResponseModel<Category>()
+                if (existingCategory == null)
+                    return NotFound(new ResponseModel<CategoryDto>()
                     {
                         Data = null,
                         Error = $"Not found category with id {id}",
@@ -178,9 +200,16 @@ namespace MovieTicketBookingAPI.Controllers
 
                 category.Id = id;
                 await _categoryService.Update(category);
-                return Ok(new ResponseModel<Category>()
+                
+                var categoryDto = new CategoryDto
                 {
-                    Data = category,
+                    Id = category.Id,
+                    Type = category.Type
+                };
+                
+                return Ok(new ResponseModel<CategoryDto>()
+                {
+                    Data = categoryDto,
                     Error = null,
                     Success = true,
                     ErrorCode = 200
@@ -188,7 +217,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<Category>()
+                return StatusCode(500, new ResponseModel<CategoryDto>()
                 {
                     Data = null,
                     Error = ex.Message,
@@ -199,16 +228,16 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<Category>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<Category>>> Delete(int id)
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<CategoryDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<CategoryDto>>> Delete(int id)
         {
             try
             {
                 var existingCategory = await _categoryService.GetById(id);
-                if (existingCategory == null) 
-                    return NotFound(new ResponseModel<Category>()
+                if (existingCategory == null)
+                    return NotFound(new ResponseModel<CategoryDto>()
                     {
                         Data = null,
                         Error = $"Not found category with id {id}",
@@ -217,9 +246,16 @@ namespace MovieTicketBookingAPI.Controllers
                     });
 
                 await _categoryService.Delete(id);
-                return Ok(new ResponseModel<Category>()
+                
+                var categoryDto = new CategoryDto
                 {
-                    Data = existingCategory,
+                    Id = existingCategory.Id,
+                    Type = existingCategory.Type
+                };
+                
+                return Ok(new ResponseModel<CategoryDto>()
+                {
+                    Data = categoryDto,
                     Error = null,
                     Success = true,
                     ErrorCode = 200
@@ -227,7 +263,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<Category>()
+                return StatusCode(500, new ResponseModel<CategoryDto>()
                 {
                     Data = null,
                     Error = ex.Message,
