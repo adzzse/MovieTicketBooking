@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using BusinessObjects.Dtos.CinemaRoom;
+using BusinessObjects.Dtos.Ticket;
 
 namespace BusinessObjects.Dtos.Seat
 {
@@ -17,5 +19,14 @@ namespace BusinessObjects.Dtos.Seat
 
         [JsonPropertyName("cinemaName")]
         public string? CinemaRoomName { get; set; }
+    }
+
+    public class SeatWithTicketsDto
+    {
+        public int Id { get; set; }
+        public string? SeatNumber { get; set; }
+        public int CinemaRoomId { get; set; }
+        public CinemaRoomDto? CinemaRoom { get; set; }
+        public List<TicketDto> Tickets { get; set; } = new List<TicketDto>();
     }
 }

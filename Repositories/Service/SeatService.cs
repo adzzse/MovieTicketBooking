@@ -15,5 +15,11 @@ namespace Services.Service
     {
 
         public async Task<IEnumerable<SeatDto>> GetAvailableSeatsByShowtimeId(int showtimeId, int movieId) => await _unitOfWork.SeatRepository.GetAvailableSeatsByShowtimeId(showtimeId, movieId);
+
+        public async Task<IEnumerable<Seat>> GetAllWithTickets() => await _unitOfWork.SeatRepository.GetAllWithTickets();
+
+        public async Task<Seat?> GetByIdWithTickets(int id) => await _unitOfWork.SeatRepository.GetByIdWithTickets(id);
+
+        public async Task<IEnumerable<Seat>> GetByCinemaRoomIdWithTickets(int cinemaRoomId) => await _unitOfWork.SeatRepository.GetByCinemaRoomIdWithTickets(cinemaRoomId);
     }
 }

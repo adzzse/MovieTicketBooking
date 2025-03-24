@@ -10,5 +10,6 @@ namespace BusinessObjects.Dtos.Bill
     {
         public int ShowtimeId { get; set; }
         public List<int> SeatIds { get; set; }
+        public int UserId { get; set; }
     }
 }

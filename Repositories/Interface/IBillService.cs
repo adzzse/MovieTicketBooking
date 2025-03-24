@@ -9,7 +9,7 @@ namespace Services.Interface
 {
     public interface IBillService : IGenericService<Bill>
     {
-        Task<PurchaseTicketResponseDto> PurchaseTickets(int showtimeId, List<int> seatIds, Account account);
+        Task<PurchaseTicketResponseDto> PurchaseTickets(int showtimeId, List<int> seatIds, int userId);
         Task<List<Bill>> GetBillsByAccountId(int accountId);
         Task<Boolean> CheckBill(int ticketId);
     }

@@ -11,5 +11,8 @@ namespace Services.Interface
     public interface ISeatService : IGenericService<Seat>
     {
         Task<IEnumerable<SeatDto>> GetAvailableSeatsByShowtimeId(int showtimeId, int movieId);
+        Task<IEnumerable<Seat>> GetAllWithTickets();
+        Task<Seat?> GetByIdWithTickets(int id);
+        Task<IEnumerable<Seat>> GetByCinemaRoomIdWithTickets(int cinemaRoomId);
     }
 }

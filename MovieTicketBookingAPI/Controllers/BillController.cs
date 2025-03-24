@@ -1,6 +1,7 @@
 ﻿using BusinessObjects;
 using BusinessObjects.Dtos.Bill;
 using BusinessObjects.Dtos.Schema_Response;
+using BusinessObjects.Dtos.Ticket;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interface;
 using System.Security.Claims;
@@ -20,10 +21,10 @@ namespace MovieTicketBookingAPI.Controllers
         private readonly IAuthService _authService = authService;
 
         [HttpGet]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<Bill>>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<Bill>>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<Bill>>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<IEnumerable<Bill>>>> GetAll()
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<BillDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<BillDto>>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<BillDto>>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<IEnumerable<BillDto>>>> GetAll()
         {
             try
             {
@@ -32,7 +33,7 @@ namespace MovieTicketBookingAPI.Controllers
                 // Check if bills list is empty and return 404 if it is
                 if (bills == null || !bills.Any())
                 {
-                    return NotFound(new ResponseModel<IEnumerable<Bill>>()
+                    return NotFound(new ResponseModel<IEnumerable<BillDto>>()
                     {
                         Data = null,
                         Error = "No bills found",
@@ -41,9 +42,11 @@ namespace MovieTicketBookingAPI.Controllers
                     });
                 }
                 
-                return Ok(new ResponseModel<IEnumerable<Bill>>()
+                var billDtos = bills.Select(bill => MapToBillDto(bill)).ToList();
+                
+                return Ok(new ResponseModel<IEnumerable<BillDto>>()
                 {
-                    Data = bills,
+                    Data = billDtos,
                     Error = null,
                     Success = true,
                     ErrorCode = 200
@@ -51,7 +54,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<IEnumerable<Bill>>()
+                return StatusCode(500, new ResponseModel<IEnumerable<BillDto>>()
                 {
                     Data = null,
                     Error = ex.Message,
@@ -62,25 +65,28 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<Bill>>> GetById(int id)
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<BillDto>>> GetById(int id)
         {
             try
             {
                 var bill = await _billService.GetById(id);
                 if (bill == null)
-                    return NotFound(new ResponseModel<Bill>()
+                    return NotFound(new ResponseModel<BillDto>()
                     {
                         Data = null,
                         Error = $"Not found bill with id {id}",
                         Success = false,
                         ErrorCode = 404
                     });
-                return Ok(new ResponseModel<Bill>()
+                    
+                var billDto = MapToBillDto(bill);
+                
+                return Ok(new ResponseModel<BillDto>()
                 {
-                    Data = bill,
+                    Data = billDto,
                     Error = null,
                     Success = true,
                     ErrorCode = 200
@@ -88,7 +94,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<Bill>()
+                return StatusCode(500, new ResponseModel<BillDto>()
                 {
                     Data = null,
                     Error = ex.Message,
@@ -99,25 +105,28 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpGet("account/{accountId}")]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<Bill>>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<Bill>>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<Bill>>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<IEnumerable<Bill>>>> GetByAccountId(int accountId)
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<BillDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<BillDto>>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<BillDto>>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<IEnumerable<BillDto>>>> GetByAccountId(int accountId)
         {
             try
             {
                 var bills = await _billService.GetBillsByAccountId(accountId);
                 if (bills == null || !bills.Any())
-                    return NotFound(new ResponseModel<IEnumerable<Bill>>()
+                    return NotFound(new ResponseModel<IEnumerable<BillDto>>()
                     {
                         Data = null,
                         Error = $"No bills found for account {accountId}",
                         Success = false,
                         ErrorCode = 404
                     });
-                return Ok(new ResponseModel<IEnumerable<Bill>>()
+                    
+                var billDtos = bills.Select(bill => MapToBillDto(bill)).ToList();
+                
+                return Ok(new ResponseModel<IEnumerable<BillDto>>()
                 {
-                    Data = bills,
+                    Data = billDtos,
                     Error = null,
                     Success = true,
                     ErrorCode = 200
@@ -125,7 +134,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<IEnumerable<Bill>>()
+                return StatusCode(500, new ResponseModel<IEnumerable<BillDto>>()
                 {
                     Data = null,
                     Error = ex.Message,
@@ -165,18 +174,20 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPost]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status201Created)]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<Bill>>> Create([FromBody] Bill bill)
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<BillDto>>> Create([FromBody] Bill bill)
         {
             try
             {
                 var createdBill = await _billService.Add(bill);
+                var billDto = MapToBillDto(createdBill);
+                
                 return CreatedAtAction(nameof(GetById), new { id = createdBill.Id },
-                    new ResponseModel<Bill>()
+                    new ResponseModel<BillDto>()
                     {
-                        Data = createdBill,
+                        Data = billDto,
                         Error = null,
                         Success = true,
                         ErrorCode = 201
@@ -184,7 +195,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<Bill>()
+                return StatusCode(500, new ResponseModel<BillDto>()
                 {
                     Data = null,
                     Error = ex.Message,
@@ -203,31 +214,7 @@ namespace MovieTicketBookingAPI.Controllers
         {
             try
             {
-                var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-                if (string.IsNullOrEmpty(userEmail))
-                {
-                    return Unauthorized(new ResponseModel<PurchaseTicketResponseDto>()
-                    {
-                        Data = null,
-                        Error = "User not authenticated",
-                        Success = false,
-                        ErrorCode = 401
-                    });
-                }
-
-                var account = await _authService.GetAccountByEmail(userEmail);
-                if (account == null)
-                {
-                    return Unauthorized(new ResponseModel<PurchaseTicketResponseDto>()
-                    {
-                        Data = null,
-                        Error = "User account not found",
-                        Success = false,
-                        ErrorCode = 401
-                    });
-                }
-
-                var response = await _billService.PurchaseTickets(request.ShowtimeId, request.SeatIds, account);
+                var response = await _billService.PurchaseTickets(request.ShowtimeId, request.SeatIds, request.UserId);
                 return Ok(new ResponseModel<PurchaseTicketResponseDto>()
                 {
                     Data = response,
@@ -249,16 +236,16 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<Bill>>> Update(int id, [FromBody] Bill bill)
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<BillDto>>> Update(int id, [FromBody] Bill bill)
         {
             try
             {
                 var existingBill = await _billService.GetById(id);
                 if (existingBill == null)
-                    return NotFound(new ResponseModel<Bill>()
+                    return NotFound(new ResponseModel<BillDto>()
                     {
                         Data = null,
                         Error = $"Not found bill with id {id}",
@@ -268,9 +255,11 @@ namespace MovieTicketBookingAPI.Controllers
 
                 bill.Id = id;
                 await _billService.Update(bill);
-                return Ok(new ResponseModel<Bill>()
+                var billDto = MapToBillDto(bill);
+                
+                return Ok(new ResponseModel<BillDto>()
                 {
-                    Data = bill,
+                    Data = billDto,
                     Error = null,
                     Success = true,
                     ErrorCode = 200
@@ -278,7 +267,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<Bill>()
+                return StatusCode(500, new ResponseModel<BillDto>()
                 {
                     Data = null,
                     Error = ex.Message,
@@ -289,16 +278,16 @@ namespace MovieTicketBookingAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<Bill>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<Bill>>> Delete(int id)
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<BillDto>>> Delete(int id)
         {
             try
             {
                 var existingBill = await _billService.GetById(id);
                 if (existingBill == null)
-                    return NotFound(new ResponseModel<Bill>()
+                    return NotFound(new ResponseModel<BillDto>()
                     {
                         Data = null,
                         Error = $"Not found bill with id {id}",
@@ -307,9 +296,11 @@ namespace MovieTicketBookingAPI.Controllers
                     });
 
                 await _billService.Delete(id);
-                return Ok(new ResponseModel<Bill>()
+                var billDto = MapToBillDto(existingBill);
+                
+                return Ok(new ResponseModel<BillDto>()
                 {
-                    Data = existingBill,
+                    Data = billDto,
                     Error = null,
                     Success = true,
                     ErrorCode = 200
@@ -317,7 +308,7 @@ namespace MovieTicketBookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<Bill>()
+                return StatusCode(500, new ResponseModel<BillDto>()
                 {
                     Data = null,
                     Error = ex.Message,
@@ -325,6 +316,32 @@ namespace MovieTicketBookingAPI.Controllers
                     ErrorCode = 500
                 });
             }
+        }
+        
+        // Helper method to map Bill entity to BillDto
+        private BillDto MapToBillDto(Bill bill)
+        {
+            return new BillDto
+            {
+                Id = bill.Id,
+                AccountId = bill.AccountId,
+                AccountName = bill.Account?.Name,
+                TicketId = bill.TicketId,
+                Ticket = bill.Ticket == null ? null : new TicketDto
+                {
+                    Id = bill.Ticket.Id,
+                    SeatId = bill.Ticket.SeatId,
+                    SeatName = bill.Ticket.Seat?.SeatNumber ?? string.Empty,
+                    MovieName = bill.Ticket.Movie?.Name,
+                    ShowDateTime = bill.Ticket.Showtime?.ShowDateTime ?? DateTime.MinValue,
+                    Price = bill.Ticket.Price,
+                    Status = bill.Ticket.Status
+                },
+                Quantity = bill.Quantity,
+                TotalPrice = bill.TotalPrice,
+                PromotionId = bill.PromotionId,
+                TransactionStatus = bill.Transaction?.Status
+            };
         }
     }
 }

@@ -19,8 +19,14 @@ namespace Services.Service
             _accountService = accountRepository;
         }
 
-        public async Task<PurchaseTicketResponseDto> PurchaseTickets(int showtimeId, List<int> seatIds, Account account)
+        public async Task<PurchaseTicketResponseDto> PurchaseTickets(int showtimeId, List<int> seatIds, int userId)
         {
+            var account = await _unitOfWork.AccountRepository.GetByIdAsync(userId);
+            if (account == null)
+            {
+                throw new Exception("User account not found");
+            }
+
             var showtime = await _unitOfWork.ShowTimeRepository.GetByIdAsync(showtimeId);
             if (showtime == null)
             {
