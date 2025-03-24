@@ -1,4 +1,4 @@
-﻿using BusinessObjects;
+using BusinessObjects;
 using BusinessObjects.Dtos.Schema_Response;
 using BusinessObjects.Dtos.Ticket;
 using BusinessObjects.Dtos.TransactionHistory;
@@ -68,13 +68,12 @@ namespace MovieTicketBookingAPI.Controllers
         //    return Ok(transactionHistory);
         //}
 
-        [HttpGet("list/account")]
-        public async Task<ActionResult<ResponseModel<IEnumerable<TransactionHistoryDto>>>> GetAllTransactionHistoryByAccountId()
+        [HttpGet("list/account/{accountId}")]
+        public async Task<ActionResult<ResponseModel<IEnumerable<TransactionHistoryDto>>>> GetAllTransactionHistoryByAccountId(int accountId)
         {
-            var account = await _authService.GetUserByClaims(HttpContext.User);
             try
             {
-                var transactionHistories = await _transactionHistoryService.GetAllTransactionHistoryByAccountId(account.Id);
+                var transactionHistories = await _transactionHistoryService.GetAllTransactionHistoryByAccountId(accountId);
                 if (transactionHistories == null || !transactionHistories.Any())
                 {
                     return Ok(new ResponseModel<IEnumerable<TransactionHistoryDto>>
@@ -96,4 +95,4 @@ namespace MovieTicketBookingAPI.Controllers
             }
         }
     }
-}
+} 

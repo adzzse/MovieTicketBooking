@@ -34,6 +34,7 @@ namespace DataAccessLayers
                 .Include(th => th.Transaction)
                 .ThenInclude(t => t.Type)
                 .Where(th => th.AccountId == accountId)
+                .OrderByDescending(t => t.Time)
                 .Select(t => new TransactionHistoryDto
                 {
                     MovieName = t.Transaction!.Bill!.Ticket!.Movie!.Name,
@@ -46,7 +47,6 @@ namespace DataAccessLayers
                     Status = t.Status ?? "Unknown",
                     TransactionType = t.Transaction!.Type!.Name
                 })
-                .OrderByDescending(t => t.Time)
                 .ToListAsync();
 
             return transactionHistories;
