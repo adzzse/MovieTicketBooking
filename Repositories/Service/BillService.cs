@@ -122,7 +122,6 @@ namespace Services.Service
                     transactions.Add(new Transaction
                     {
                         BillId = bill.Id,
-                        TypeId = 1,
                         Status = "Success"
                     });
                 }
@@ -261,11 +260,11 @@ namespace Services.Service
             }
             
             // Check if payment reference indicates success
-            if (confirmDto.PaymentReference.Contains("success"))
+            if (confirmDto.PaymentReference.Contains("success", StringComparison.OrdinalIgnoreCase))
             {
                 paymentStatus = PaymentStatus.Success;
             }
-            else if (confirmDto.PaymentReference.Contains("cancel"))
+            else if (confirmDto.PaymentReference.Contains("cancel", StringComparison.OrdinalIgnoreCase))
             {
                 paymentStatus = PaymentStatus.Cancel;
             }
@@ -326,16 +325,36 @@ namespace Services.Service
                 // Create transactions
                 foreach (var bill in bills)
                 {
-                    transactions.Add(new Transaction
+                    var transaction = new Transaction
                     {
                         BillId = bill.Id,
-                        TypeId = 1,
                         Status = paymentStatus == PaymentStatus.Success ? "Success" : "Failed"
-                    });
+                    };
+                    
+                    // Add transaction to list
+                    transactions.Add(transaction);
                 }
 
                 // Add transactions
                 await _unitOfWork.TransactionRepository.AddRangeAsync(transactions);
+                await _unitOfWork.SaveChangesAsync();
+                
+                // Create transaction history entries
+                var transactionHistories = new List<TransactionHistory>();
+                foreach (var transaction in transactions)
+                {
+                    transactionHistories.Add(new TransactionHistory
+                    {
+                        TransactionId = transaction.Id,
+                        Price = bills.FirstOrDefault(b => b.Id == transaction.BillId)?.TotalPrice ?? 0,
+                        AccountId = account.Id,
+                        Time = DateTime.Now,
+                        Status = confirmDto.PaymentReference // Store the original payment reference
+                    });
+                }
+                
+                // Add transaction histories
+                await _unitOfWork.TransactionHistoryRepository.AddRangeAsync(transactionHistories);
 
                 // Save all changes
                 await _unitOfWork.SaveChangesAsync();
@@ -352,6 +371,65 @@ namespace Services.Service
                 Console.WriteLine($"Error during ticket purchase: {ex.Message}");
                 throw new Exception($"Failed to complete purchase: {ex.Message}");
             }
+        }
+
+        public async Task<List<BusinessObjects.Dtos.Transaction.TransactionHistoryDto>> GetUserTransactionHistory(int accountId)
+        {
+            // Validate account exists
+            var account = await _unitOfWork.AccountRepository.GetByIdAsync(accountId);
+            if (account == null)
+            {
+                throw new Exception("User account not found");
+            }
+
+            // Get all bills for this account
+            var bills = await _unitOfWork.BillRepository.FindAsync(b => b.AccountId == accountId);
+            if (bills == null || !bills.Any())
+            {
+                return new List<BusinessObjects.Dtos.Transaction.TransactionHistoryDto>();
+            }
+
+            // Get all transaction IDs from the bills
+            var billIds = bills.Select(b => b.Id).ToList();
+            var transactions = await _unitOfWork.TransactionRepository.FindAsync(t => billIds.Contains(t.BillId ?? 0));
+            
+            var transactionDtos = new List<BusinessObjects.Dtos.Transaction.TransactionHistoryDto>();
+            
+            foreach (var transaction in transactions)
+            {
+                // Find the associated bill
+                var bill = bills.FirstOrDefault(b => b.Id == transaction.BillId);
+                if (bill == null || bill.TicketId == null) continue;
+                
+                // Get ticket details
+                var ticket = await _unitOfWork.TicketRepository.GetByIdAsync(bill.TicketId.Value);
+                if (ticket == null) continue;
+                
+                // Get seat, showtime and movie details
+                var seat = await _unitOfWork.SeatRepository.GetByIdAsync(ticket.SeatId);
+                var showtime = await _unitOfWork.ShowTimeRepository.GetByIdAsync(ticket.ShowtimeId);
+                var movie = await _unitOfWork.MovieRepository.GetByIdAsync(ticket.MovieId);
+                
+                // Get transaction histories if any
+                var histories = await _unitOfWork.TransactionHistoryRepository.FindAsync(th => th.TransactionId == transaction.Id);
+                var latestHistory = histories.OrderByDescending(h => h.Time).FirstOrDefault();
+                
+                transactionDtos.Add(new BusinessObjects.Dtos.Transaction.TransactionHistoryDto
+                {
+                    Id = bill.Id,
+                    TransactionId = transaction.Id,
+                    MovieName = movie?.Name ?? "Unknown movie",
+                    SeatNumber = seat?.SeatNumber ?? "Unknown seat",
+                    ShowDateTime = showtime?.ShowDateTime ?? DateTime.MinValue,
+                    Price = bill.TotalPrice,
+                    TransactionDate = latestHistory?.Time ?? DateTime.Now,
+                    Status = transaction.Status ?? "Unknown",
+                    PaymentReference = latestHistory?.Status ?? transaction.Status ?? "Unknown"
+                });
+            }
+            
+            // Order by most recent transactions first
+            return transactionDtos.OrderByDescending(t => t.TransactionDate).ToList();
         }
     }
 }

@@ -16,7 +16,6 @@ namespace DataAccessLayers.UnitOfWork
         public TicketRepository TicketRepository { get; }
         public TransactionRepository TransactionRepository { get; }
         public TransactionHistoryRepository TransactionHistoryRepository { get; }
-        public TransactionTypeRepository TransactionTypeRepository { get; }
         public SeatRepository SeatRepository { get; }
         public CinemaRoomRepository CinemaRoomRepository { get; }
         public ShowTimeRepository ShowTimeRepository { get; }

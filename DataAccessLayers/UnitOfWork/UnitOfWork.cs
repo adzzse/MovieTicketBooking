@@ -86,16 +86,6 @@ namespace DataAccessLayers.UnitOfWork
             }
         }
 
-        private TransactionTypeRepository transactionTypeRepository;
-        public TransactionTypeRepository TransactionTypeRepository
-        {
-            get
-            {
-                transactionTypeRepository ??= new TransactionTypeRepository(_projectContext);
-                return transactionTypeRepository;
-            }
-        }
-
         private SeatRepository seatRepository;
         public SeatRepository SeatRepository
         {

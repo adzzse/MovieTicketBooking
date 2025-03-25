@@ -1,97 +1,62 @@
-using BusinessObjects;
 using BusinessObjects.Dtos.Schema_Response;
-using BusinessObjects.Dtos.Ticket;
-using BusinessObjects.Dtos.TransactionHistory;
+using BusinessObjects.Dtos.Transaction;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Identity.Client;
 using Services.Interface;
-using Services.Service;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MovieTicketBookingAPI.Controllers
 {
-    [Route("api/transactionhistories")]
     [ApiController]
-    public class TransactionHistoryController(ITransactionHistoryService transactionHistoryService, IAuthService authService) : ControllerBase
+    [Route("api/transaction-history")]
+    public class TransactionHistoryController : ControllerBase
     {
-        private readonly ITransactionHistoryService _transactionHistoryService = transactionHistoryService;
-        private readonly IAuthService _authService = authService;
+        private readonly ITransactionHistoryService _transactionHistoryService;
 
-        //[HttpGet("{id}")]
-        //public async Task<IActionResult> GetTransactionHistoryById(int id)
-        //{
-        //    var transactionHistory = await _transactionHistoryService.GetById(id);
-        //    if (transactionHistory == null) return NotFound();
-        //    return Ok(transactionHistory);
-        //}
+        public TransactionHistoryController(ITransactionHistoryService transactionHistoryService)
+        {
+            _transactionHistoryService = transactionHistoryService;
+        }
 
-        //[HttpGet]
-        //public async Task<IActionResult> GetAllTransactionHistories()
-        //{
-        //    var transactionHistories = await _transactionHistoryService.GetAll();
-        //    return Ok(transactionHistories);
-        //}
-
-        //[HttpPost]
-        //public async Task<IActionResult> AddTransactionHistory([FromBody] TransactionHistory transactionHistory)
-        //{
-        //    var result = await _transactionHistoryService.Add(transactionHistory);
-        //    return CreatedAtAction(nameof(AddTransactionHistory), new { id = result.Id }, result);
-        //}
-
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> UpdateTransactionHistory(int id, [FromBody] TransactionHistory transactionHistory)
-        //{
-        //    var existingTransactionHistory = await _transactionHistoryService.GetById(id);
-        //    if (existingTransactionHistory == null) return NotFound();
-
-        //    transactionHistory.Id = id;
-        //    await _transactionHistoryService.Update(transactionHistory);
-        //    return NoContent();
-        //}
-
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteTransactionHistory(int id)
-        //{
-        //    var existingTransactionHistory = await _transactionHistoryService.GetById(id);
-        //    if (existingTransactionHistory == null) return NotFound();
-
-        //    await _transactionHistoryService.Delete(id);
-        //    return NoContent();
-        //}
-
-        //[HttpGet("/Account/{accountId}")]
-        //public async Task<IActionResult> GetTransactionHistoryByAccountId(int accountId)
-        //{
-        //    var transactionHistory = await _transactionHistoryService.GetTransactionHistoryByAccountId(accountId);
-        //    if (transactionHistory == null) return NotFound();
-        //    return Ok(transactionHistory);
-        //}
-
-        [HttpGet("list/account/{accountId}")]
-        public async Task<ActionResult<ResponseModel<IEnumerable<TransactionHistoryDto>>>> GetAllTransactionHistoryByAccountId(int accountId)
+        [HttpGet("user/{accountId}")]
+        [ProducesResponseType(typeof(ResponseModel<IEnumerable<TransactionHistoryDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<string>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<string>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<IEnumerable<TransactionHistoryDto>>>> GetUserTransactionHistory(int accountId)
         {
             try
             {
-                var transactionHistories = await _transactionHistoryService.GetAllTransactionHistoryByAccountId(accountId);
-                if (transactionHistories == null || !transactionHistories.Any())
+                var transactionHistory = await _transactionHistoryService.GetUserTransactionHistory(accountId);
+                
+                if (transactionHistory == null || !transactionHistory.Any())
                 {
                     return Ok(new ResponseModel<IEnumerable<TransactionHistoryDto>>
                     {
                         Success = true,
-                        Data = transactionHistories
+                        Data = new List<TransactionHistoryDto>(),
+                        Error = null,
+                        ErrorCode = 200
                     });
                 }
-
+                
                 return Ok(new ResponseModel<IEnumerable<TransactionHistoryDto>>
                 {
                     Success = true,
-                    Data = transactionHistories
+                    Data = transactionHistory,
+                    Error = null,
+                    ErrorCode = 200
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResponseModel<TransactionHistoryDto> { Success = false, Error = ex.Message, ErrorCode = 500 });
+                return StatusCode(500, new ResponseModel<string>
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    ErrorCode = 500
+                });
             }
         }
     }

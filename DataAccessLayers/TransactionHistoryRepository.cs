@@ -32,7 +32,6 @@ namespace DataAccessLayers
                 .ThenInclude(b => b.Ticket)
                 .ThenInclude(t => t.Seat)
                 .Include(th => th.Transaction)
-                .ThenInclude(t => t.Type)
                 .Where(th => th.AccountId == accountId)
                 .OrderByDescending(t => t.Time)
                 .Select(t => new TransactionHistoryDto
@@ -45,7 +44,6 @@ namespace DataAccessLayers
                     TotalPrice = t.Transaction!.Bill!.TotalPrice,
                     Time = t.Time!.Value.ToString("yyyy/MM/dd HH:mm:ss"),
                     Status = t.Status ?? "Unknown",
-                    TransactionType = t.Transaction!.Type!.Name
                 })
                 .ToListAsync();
 

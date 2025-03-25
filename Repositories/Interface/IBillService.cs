@@ -17,5 +17,8 @@ namespace Services.Interface
         Task<ShoppingCartDto> AddTicketToCart(int ticketId, int? accountId);
         Task<ShoppingCartDto> GetShoppingCart(List<int> ticketIds, int? accountId);
         Task<PurchaseTicketResponseDto> ConfirmPurchase(ConfirmPurchaseDto confirmDto);
+        
+        // Transaction history
+        Task<List<BusinessObjects.Dtos.Transaction.TransactionHistoryDto>> GetUserTransactionHistory(int accountId);
     }
 }

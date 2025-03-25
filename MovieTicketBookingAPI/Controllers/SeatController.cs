@@ -318,9 +318,9 @@ namespace MovieTicketBookingAPI.Controllers
         [ProducesResponseType(typeof(ResponseModel<string>), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ResponseModel<string>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<string>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<TicketDto>>> SelectSeat([FromForm] SeatSelectionDto selectionDto)
+        public async Task<ActionResult<ResponseModel<TicketDto>>> SelectSeat(int showtimeId, int seatId)
         {
-            if (selectionDto == null || selectionDto.SeatId <= 0 || selectionDto.ShowtimeId <= 0)
+            if (seatId <= 0 || showtimeId <= 0)
             {
                 return BadRequest(new ResponseModel<string>
                 {
@@ -333,33 +333,33 @@ namespace MovieTicketBookingAPI.Controllers
             try
             {
                 // Verify the seat exists
-                var seat = await _seatService.GetById(selectionDto.SeatId);
+                var seat = await _seatService.GetById(seatId);
                 if (seat == null)
                 {
                     return NotFound(new ResponseModel<string>
                     {
                         Success = false,
-                        Error = $"Seat with ID {selectionDto.SeatId} not found",
+                        Error = $"Seat with ID {seatId} not found",
                         ErrorCode = 404
                     });
                 }
 
                 // Verify the showtime exists
-                var showtime = await _showTimeService.GetById(selectionDto.ShowtimeId);
+                var showtime = await _showTimeService.GetById(showtimeId);
                 if (showtime == null)
                 {
                     return NotFound(new ResponseModel<string>
                     {
                         Success = false,
-                        Error = $"Showtime with ID {selectionDto.ShowtimeId} not found",
+                        Error = $"Showtime with ID {showtimeId} not found",
                         ErrorCode = 404
                     });
                 }
 
                 var allTickets = await _ticketService.GetAllIncludeAsync();
                 var existingTicket = allTickets.FirstOrDefault(t => 
-                    t.SeatId == selectionDto.SeatId && 
-                    t.ShowtimeId == selectionDto.ShowtimeId && 
+                    t.SeatId == seatId && 
+                    t.ShowtimeId == showtimeId && 
                     (t.Status == 0 || t.Status == 1));
                 
                 if (existingTicket != null)
@@ -374,8 +374,8 @@ namespace MovieTicketBookingAPI.Controllers
 
                 var newTicket = new Ticket
                 {
-                    SeatId = selectionDto.SeatId,
-                    ShowtimeId = selectionDto.ShowtimeId,
+                    SeatId = seatId,
+                    ShowtimeId = showtimeId,
                     MovieId = showtime.MovieId, // Get MovieId from showtime
                     Status = 1,
                     Price = 120000

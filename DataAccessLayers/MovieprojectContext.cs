@@ -27,7 +27,6 @@ namespace DataAccessLayers
         public DbSet<Ticket> Tickets { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<TransactionHistory> TransactionHistories { get; set; }
-        public DbSet<TransactionType> TransactionTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -123,10 +122,6 @@ namespace DataAccessLayers
                     .HasForeignKey<Transaction>(d => d.BillId)
                     .HasConstraintName("FK_Transaction_Bill");
 
-                entity.HasOne(d => d.Type)
-                    .WithMany(p => p.Transactions)
-                    .HasForeignKey(d => d.TypeId)
-                    .HasConstraintName("FK_Transaction_TransactionType");
             });
 
             modelBuilder.Entity<TransactionHistory>(entity =>
