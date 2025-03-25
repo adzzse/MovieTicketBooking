@@ -58,6 +58,58 @@ namespace MovieTicketBookingAPI.Controllers
             }
         }
 
+        [HttpGet("showtimeid/{showtimeId}")]
+        public async Task<ActionResult<ResponseModel<IEnumerable<SeatDto>>>> GetAvailableSeatsByShowtimeId(int showtimeId)
+        {
+            if (showtimeId <= 0)
+                return BadRequest(new ResponseModel<string>
+                {
+                    Success = false,
+                    Error = "Invalid showtimeId.",
+                    ErrorCode = 400
+                });
+
+            try
+            {
+                // Get the showtime to determine the movie ID
+                var showtime = await _showTimeService.GetById(showtimeId);
+                if (showtime == null)
+                {
+                    return NotFound(new ResponseModel<string>
+                    {
+                        Success = false,
+                        Error = $"Showtime with ID {showtimeId} not found",
+                        ErrorCode = 404
+                    });
+                }
+
+                var seats = await _seatService.GetAvailableSeatsByShowtimeId(showtimeId, showtime.MovieId);
+
+                if (seats == null || !seats.Any())
+                    return NotFound(new ResponseModel<string>
+                    {
+                        Success = false,
+                        Error = "No available seats found.",
+                        ErrorCode = 404
+                    });
+
+                return Ok(new ResponseModel<IEnumerable<SeatDto>>
+                {
+                    Data = seats,
+                    Success = true
+                });
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, new ResponseModel<string>
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    ErrorCode = 500
+                });
+            }
+        }
+
         [HttpGet]
         public async Task<ActionResult<ResponseModel<IEnumerable<SeatWithTicketsDto>>>> GetAll()
         {
@@ -291,6 +343,110 @@ namespace MovieTicketBookingAPI.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new ResponseModel<IEnumerable<SeatDto>>
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    ErrorCode = 500
+                });
+            }
+        }
+        
+        [HttpPost("select/{showtimeId}/{seatId}")]
+        [ProducesResponseType(typeof(ResponseModel<TicketDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<string>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseModel<string>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ResponseModel<string>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<TicketDto>>> SelectSeat([FromForm] SeatSelectionDto selectionDto)
+        {
+            if (selectionDto == null || selectionDto.SeatId <= 0 || selectionDto.ShowtimeId <= 0)
+            {
+                return BadRequest(new ResponseModel<string>
+                {
+                    Success = false,
+                    Error = "Invalid seat selection data. SeatId and ShowtimeId are required.",
+                    ErrorCode = 400
+                });
+            }
+
+            try
+            {
+                // Verify the seat exists
+                var seat = await _seatService.GetById(selectionDto.SeatId);
+                if (seat == null)
+                {
+                    return NotFound(new ResponseModel<string>
+                    {
+                        Success = false,
+                        Error = $"Seat with ID {selectionDto.SeatId} not found",
+                        ErrorCode = 404
+                    });
+                }
+
+                // Verify the showtime exists
+                var showtime = await _showTimeService.GetById(selectionDto.ShowtimeId);
+                if (showtime == null)
+                {
+                    return NotFound(new ResponseModel<string>
+                    {
+                        Success = false,
+                        Error = $"Showtime with ID {selectionDto.ShowtimeId} not found",
+                        ErrorCode = 404
+                    });
+                }
+
+                var allTickets = await _ticketService.GetAllIncludeAsync();
+                var existingTicket = allTickets.FirstOrDefault(t => 
+                    t.SeatId == selectionDto.SeatId && 
+                    t.ShowtimeId == selectionDto.ShowtimeId && 
+                    (t.Status == 0 || t.Status == 1));
+                
+                if (existingTicket != null)
+                {
+                    return BadRequest(new ResponseModel<string>
+                    {
+                        Success = false,
+                        Error = "This seat is already booked or not available for this showtime",
+                        ErrorCode = 400
+                    });
+                }
+
+                var newTicket = new Ticket
+                {
+                    SeatId = selectionDto.SeatId,
+                    ShowtimeId = selectionDto.ShowtimeId,
+                    MovieId = showtime.MovieId, // Get MovieId from showtime
+                    Status = 1,
+                    Price = 120000
+                };
+
+                var createdTicket = await _ticketService.Add(newTicket);
+                
+                // Update showtime available seats
+                showtime.AvailableSeats -= 1;
+                await _showTimeService.Update(showtime);
+                
+                var ticketDto = new TicketDto
+                {
+                    Id = createdTicket.Id,
+                    SeatId = createdTicket.SeatId,
+                    SeatName = seat.SeatNumber ?? string.Empty,
+                    MovieName = showtime.Movie?.Name,
+                    ShowDateTime = showtime.ShowDateTime,
+                    Price = createdTicket.Price,
+                    Status = createdTicket.Status
+                };
+
+                // Return in the format requested by the user
+                return Ok(new ResponseModel<List<TicketDto>>
+                {
+                    Success = true,
+                    Data = new List<TicketDto> { ticketDto },
+                    ErrorCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseModel<string>
                 {
                     Success = false,
                     Error = ex.Message,

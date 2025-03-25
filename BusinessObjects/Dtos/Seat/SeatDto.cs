@@ -32,4 +32,11 @@ namespace BusinessObjects.Dtos.Seat
         public CinemaRoomDto? CinemaRoom { get; set; }
         public List<TicketDto> Tickets { get; set; } = new List<TicketDto>();
     }
+
+    public class SeatSelectionDto
+    {
+        public int SeatId { get; set; }
+        
+        public int ShowtimeId { get; set; }
+    }
 }

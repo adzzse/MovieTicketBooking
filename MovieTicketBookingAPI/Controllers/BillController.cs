@@ -103,75 +103,6 @@ namespace MovieTicketBookingAPI.Controllers
             }
         }
 
-        [HttpGet("account/{accountId}")]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<BillDto>>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<BillDto>>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<IEnumerable<BillDto>>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<IEnumerable<BillDto>>>> GetByAccountId(int accountId)
-        {
-            try
-            {
-                var bills = await _billService.GetBillsByAccountId(accountId);
-                if (bills == null || !bills.Any())
-                    return NotFound(new ResponseModel<IEnumerable<BillDto>>()
-                    {
-                        Data = null,
-                        Error = $"No bills found for account {accountId}",
-                        Success = false,
-                        ErrorCode = 404
-                    });
-                    
-                var billDtos = bills.Select(bill => BillMapper.MapToBillDto(bill)).ToList();
-                
-                return Ok(new ResponseModel<IEnumerable<BillDto>>()
-                {
-                    Data = billDtos,
-                    Error = null,
-                    Success = true,
-                    ErrorCode = 200
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ResponseModel<IEnumerable<BillDto>>()
-                {
-                    Data = null,
-                    Error = ex.Message,
-                    Success = false,
-                    ErrorCode = 500
-                });
-            }
-        }
-
-        [HttpGet("check/{ticketId}")]
-        [ProducesResponseType(typeof(ResponseModel<BillCheckResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<BillCheckResponse>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<BillCheckResponse>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<BillCheckResponse>>> CheckBill(int ticketId)
-        {
-            try
-            {
-                var result = await _billService.CheckBill(ticketId);
-                return Ok(new ResponseModel<BillCheckResponse>()
-                {
-                    Data = new BillCheckResponse { IsValid = result },
-                    Error = null,
-                    Success = true,
-                    ErrorCode = 200
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ResponseModel<BillCheckResponse>()
-                {
-                    Data = new BillCheckResponse { IsValid = false },
-                    Error = ex.Message,
-                    Success = false,
-                    ErrorCode = 500
-                });
-            }
-        }
-
         [HttpPost]
         [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ResponseModel<BillDto>), StatusCodes.Status400BadRequest)]
@@ -195,36 +126,6 @@ namespace MovieTicketBookingAPI.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new ResponseModel<BillDto>()
-                {
-                    Data = null,
-                    Error = ex.Message,
-                    Success = false,
-                    ErrorCode = 500
-                });
-            }
-        }
-
-        [HttpPost("purchase")]
-        [ProducesResponseType(typeof(ResponseModel<PurchaseTicketResponseDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<PurchaseTicketResponseDto>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ResponseModel<PurchaseTicketResponseDto>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ResponseModel<PurchaseTicketResponseDto>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<PurchaseTicketResponseDto>>> PurchaseTickets([FromBody] PurchaseTicketRequestDto request)
-        {
-            try
-            {
-                var response = await _billService.PurchaseTickets(request.ShowtimeId, request.SeatIds, request.UserId);
-                return Ok(new ResponseModel<PurchaseTicketResponseDto>()
-                {
-                    Data = response,
-                    Error = null,
-                    Success = true,
-                    ErrorCode = 200
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ResponseModel<PurchaseTicketResponseDto>()
                 {
                     Data = null,
                     Error = ex.Message,
