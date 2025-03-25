@@ -16,7 +16,6 @@ namespace BusinessObjects.Dtos.Bill
         public TicketDto? Ticket { get; set; }
         public int Quantity { get; set; }
         public int TotalPrice { get; set; }
-        public int? PromotionId { get; set; }
         public string? TransactionStatus { get; set; }
     }
 } 

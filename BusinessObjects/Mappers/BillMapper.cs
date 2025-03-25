@@ -27,7 +27,6 @@ namespace BusinessObjects.Mappers
                 },
                 Quantity = bill.Quantity,
                 TotalPrice = bill.TotalPrice,
-                PromotionId = bill.PromotionId,
                 TransactionStatus = bill.Transaction?.Status
             };
         }
