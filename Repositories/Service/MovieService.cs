@@ -12,12 +12,12 @@ namespace Services.Service
         //}
         public async Task<IEnumerable<Movie>> GetAllIncludeType()
         {
-            return await _unitOfWork.EventRepository.GetAllIncludeType();
+            return await _unitOfWork.MovieRepository.GetAllIncludeType();
         }
         
         public async Task<Movie> GetByIdIncludeType(int id)
         {
-            return await _unitOfWork.EventRepository.GetByIdIncludeType(id);
+            return await _unitOfWork.MovieRepository.GetByIdIncludeType(id);
         }
     }
 }

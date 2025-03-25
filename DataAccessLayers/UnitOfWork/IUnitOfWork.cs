@@ -11,7 +11,7 @@ namespace DataAccessLayers.UnitOfWork
     {
         public AccountRepository AccountRepository { get; }
         public CategoryRepository CategoryRepository { get; }
-        public MovieRepository EventRepository { get; }
+        public MovieRepository MovieRepository { get; }
         public RoleRepository RoleRepository { get; }
         public TicketRepository TicketRepository { get; }
         public TransactionRepository TransactionRepository { get; }

@@ -19,6 +19,9 @@ namespace BusinessObjects.Dtos.Seat
 
         [JsonPropertyName("cinemaName")]
         public string? CinemaRoomName { get; set; }
+
+        [JsonPropertyName("status")]
+        public bool IsAvailable { get; set; } = true;
     }
 
     public class SeatWithTicketsDto

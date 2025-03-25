@@ -7,7 +7,7 @@ namespace DataAccessLayers.UnitOfWork
         private readonly MovieprojectContext _projectContext = context;
         private CategoryRepository categoryRepository;
         private AccountRepository accountRepository;
-        private MovieRepository eventRepository;
+        private MovieRepository movieRepository;
         private RoleRepository roleRepository;
         private BillRepository billRepository;
 
@@ -29,12 +29,12 @@ namespace DataAccessLayers.UnitOfWork
             }
         }
 
-        public MovieRepository EventRepository
+        public MovieRepository MovieRepository
         {
             get
             {
-                eventRepository ??= new MovieRepository(_projectContext);
-                return eventRepository;
+                movieRepository ??= new MovieRepository(_projectContext);
+                return movieRepository;
             }
         }
 

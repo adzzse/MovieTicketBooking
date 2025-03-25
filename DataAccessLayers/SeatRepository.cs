@@ -1,4 +1,4 @@
-﻿using BusinessObjects;
+using BusinessObjects;
 using BusinessObjects.Dtos.Seat;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -21,21 +21,22 @@ namespace DataAccessLayers
             if (showtime?.CinemaRoom == null)
                 return Enumerable.Empty<SeatDto>();
 
-            var bookedSeats = await _context.Tickets
-                .Where(ticket => ticket.ShowtimeId == showtimeId && ticket.MovieId == movieId && ticket.Status != 0)
+            var unavailableSeats = await _context.Tickets
+                .Where(ticket => ticket.ShowtimeId == showtimeId && ticket.MovieId == movieId && (ticket.Status == 0 || ticket.Status == 1))
                 .Select(ticket => ticket.SeatId)
                 .ToListAsync();
 
-            var availableSeats = showtime.CinemaRoom.Seats
-                .Where(seat => !bookedSeats.Contains(seat.Id))
+            // Return all seats with availability status
+            var allSeatsWithStatus = showtime.CinemaRoom.Seats
                 .Select(seat => new SeatDto
                 {
                     Id = seat.Id,
                     SeatNumber = seat.SeatNumber ?? string.Empty,
-                    CinemaRoomName = seat.CinemaRoom?.RoomName ?? string.Empty
+                    CinemaRoomName = seat.CinemaRoom?.RoomName ?? string.Empty,
+                    IsAvailable = !unavailableSeats.Contains(seat.Id)
                 });
 
-            return availableSeats;
+            return allSeatsWithStatus;
         }
 
         public async Task<IEnumerable<Seat>> GetAllIncludeAsync()
@@ -74,4 +75,4 @@ namespace DataAccessLayers
                 .ToListAsync();
         }
     }
-}
+} 

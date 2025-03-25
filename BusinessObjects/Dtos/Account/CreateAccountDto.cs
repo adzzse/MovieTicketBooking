@@ -25,7 +25,8 @@ namespace BusinessObjects.Dtos.Account
 
         [Required]
         public int RoleId { get; set; }
-
-        public float Wallet { get; set; }
+        
+        [Required]
+        public float Wallet { get; set; } = 0;
     }
 }

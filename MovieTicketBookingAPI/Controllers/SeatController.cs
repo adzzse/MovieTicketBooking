@@ -253,15 +253,15 @@ namespace MovieTicketBookingAPI.Controllers
                 var allTickets = await _ticketService.GetAllIncludeAsync();
                 var showtimeTickets = allTickets.Where(t => t.ShowtimeId == showtimeId);
                 
-                // Get the seat IDs that are already booked
-                var bookedSeatIds = showtimeTickets
-                    .Where(t => t.Status == 1) // Assuming status 1 means booked
+                // Get the seat IDs that are already booked or not available
+                var unavailableSeatIds = showtimeTickets
+                    .Where(t => t.Status == 1 || t.Status == 0) // Both booked (1) and not available (0) tickets
                     .Select(t => t.SeatId)
                     .ToHashSet();
                 
                 // Filter out the booked seats and convert to SeatDto
                 var availableSeats = seats
-                    .Where(s => !bookedSeatIds.Contains(s.Id))
+                    .Where(s => !unavailableSeatIds.Contains(s.Id))
                     .Select(seat => new SeatDto
                     {
                         Id = seat.Id,
@@ -270,10 +270,21 @@ namespace MovieTicketBookingAPI.Controllers
                     })
                     .ToList();
                 
+                // Include all seats with their availability status in the response
+                var allSeatsWithStatus = seats
+                    .Select(seat => new SeatDto
+                    {
+                        Id = seat.Id,
+                        SeatNumber = seat.SeatNumber,
+                        CinemaRoomName = seat.CinemaRoom?.RoomName,
+                        IsAvailable = !unavailableSeatIds.Contains(seat.Id)
+                    })
+                    .ToList();
+                
                 return Ok(new ResponseModel<IEnumerable<SeatDto>>
                 {
                     Success = true,
-                    Data = availableSeats,
+                    Data = allSeatsWithStatus,
                     ErrorCode = 200
                 });
             }
