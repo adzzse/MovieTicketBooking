@@ -18,45 +18,7 @@ namespace MovieTicketBookingAPI.Controllers
         private readonly ITicketService _ticketService = ticketService;
 
 
-        [HttpGet("showtimeid/{showtimeId}/movieid/{movieId}")]
-        public async Task<ActionResult<ResponseModel<IEnumerable<SeatDto>>>> GetAvailableSeatsByShowtimeId(int showtimeId, int movieId)
-        {
-            if (showtimeId <= 0 || movieId <= 0)
-                return BadRequest(new ResponseModel<string>
-                {
-                    Success = false,
-                    Error = "Invalid showtimeId or movieId.",
-                    ErrorCode = 400
-                });
 
-            try
-            {
-                var seats = await _seatService.GetAvailableSeatsByShowtimeId(showtimeId, movieId);
-
-                if (seats == null || !seats.Any())
-                    return NotFound(new ResponseModel<string>
-                    {
-                        Success = false,
-                        Error = "No available seats found.",
-                        ErrorCode = 404
-                    });
-
-                return Ok(new ResponseModel<IEnumerable<SeatDto>>
-                {
-                    Data = seats,
-                    Success = true
-                });
-            }
-            catch(Exception ex)
-            {
-                return StatusCode(500, new ResponseModel<string>
-                {
-                    Success = false,
-                    Error = ex.Message,
-                    ErrorCode = 500
-                });
-            }
-        }
 
         [HttpGet("showtimeid/{showtimeId}")]
         public async Task<ActionResult<ResponseModel<IEnumerable<SeatDto>>>> GetAvailableSeatsByShowtimeId(int showtimeId)
