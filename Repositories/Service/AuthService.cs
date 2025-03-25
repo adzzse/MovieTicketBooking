@@ -49,7 +49,6 @@ namespace Services.Service
                 Password = hashedPassword,
                 Name = registerDto.FullName,
                 RoleId = registerDto.RoleId,
-                Wallet = 0
             };
 
             await _accountService.Add(newAccount);

@@ -15,6 +15,4 @@ public class AccountResponseBasic {
     public byte? Status { get; set; }
 
     public string? Email { get; set; }
-
-    public double? Wallet { get; set; }
 }

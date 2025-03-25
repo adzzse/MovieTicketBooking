@@ -50,8 +50,7 @@ namespace MovieTicketBookingAPI.Controllers
                     Phone = account.Phone,
                     Role = account.Role.Name,
                     Status = account.Status,
-                    Email = account.Email,
-                    Wallet = account.Wallet
+                    Email = account.Email
                 });
                 return Ok(new ResponseModel<IEnumerable<AccountResponseBasic>> { Success = true, Data = accountResponses });
             }
@@ -85,8 +84,7 @@ namespace MovieTicketBookingAPI.Controllers
                     Phone = account.Phone,
                     Role = account.Role.Name,
                     Status = account.Status,
-                    Email = account.Email,
-                    Wallet = account.Wallet
+                    Email = account.Email
                 };
 
                 return Ok(new ResponseModel<AccountResponseBasic> { Success = true, Data = accountResponse });
@@ -126,8 +124,7 @@ namespace MovieTicketBookingAPI.Controllers
                     Address = accountDto.Address ?? "",
                     Phone = accountDto.Phone ?? "",
                     RoleId = accountDto.RoleId,
-                    Status = 1,
-                    Wallet = accountDto.Wallet
+                    Status = 1
                 };
 
                 var createdAccount = await _accountService.Add(account);
@@ -143,8 +140,7 @@ namespace MovieTicketBookingAPI.Controllers
                     Phone = createdAccount.Phone,
                     Role = completeAccount?.Role?.Name ?? "Unknown",
                     Status = createdAccount.Status,
-                    Email = createdAccount.Email,
-                    Wallet = createdAccount.Wallet
+                    Email = createdAccount.Email
                 };
                 return CreatedAtAction(nameof(GetById), new { id = createdAccount.Id }, new ResponseModel<AccountResponseBasic> { Success = true, Data = accountResponse });
             }
@@ -196,11 +192,6 @@ namespace MovieTicketBookingAPI.Controllers
                     existingAccount.Email = account.Email;
                     isUpdated = true;
                 }
-                if (existingAccount.Wallet != account.Wallet)
-                {
-                    existingAccount.Wallet = (float)account.Wallet;
-                    isUpdated = true;
-                }
 
                 if (isUpdated)
                 {
@@ -242,8 +233,7 @@ namespace MovieTicketBookingAPI.Controllers
                     Phone = existingAccount.Phone,
                     Role = completeAccount?.Role?.Name ?? "Unknown",
                     Status = existingAccount.Status,
-                    Email = existingAccount.Email,
-                    Wallet = existingAccount.Wallet
+                    Email = existingAccount.Email
                 };
 
                 return Ok(new ResponseModel<AccountResponseBasic> { Success = true, Data = accountResponse });
@@ -291,95 +281,6 @@ namespace MovieTicketBookingAPI.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new ResponseModel<UserDto> { Success = false, Error = ex.Message, ErrorCode = 500 });
-            }
-        }
-
-        [HttpPut("wallet/setCash")]
-        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<UserUpdateWalletDto>>> UpdateWallet(int userId, [FromQuery] double wallet)
-        {
-            if (wallet < 0)
-                return BadRequest(new ResponseModel<UserUpdateWalletDto> { Success = false, Error = "Invalid number", ErrorCode = 400 });
-            try
-            {
-                var existingAccount = await _accountService.GetById(userId);
-                if (existingAccount == null)
-                    return NotFound(new ResponseModel<UserUpdateWalletDto> { Success = false, Error = "Account not found", ErrorCode = 404 });
-                existingAccount.Wallet += (float)wallet;
-
-                await _accountService.Update(existingAccount);
-                var updatedUserDto = new UserUpdateWalletDto
-                {
-                    Id = existingAccount.Id,
-                    Name = existingAccount.Name,
-                    Wallet = existingAccount.Wallet
-                };
-                return Ok(new ResponseModel<UserUpdateWalletDto> { Success = true, Data = updatedUserDto });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ResponseModel<UserUpdateWalletDto> { Success = false, Error = ex.Message, ErrorCode = 500 });
-            }
-        }
-
-        [HttpPut("wallet/addCash")]
-        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ResponseModel<UserUpdateWalletDto>), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ResponseModel<UserUpdateWalletDto>>> UpdateWalletById([FromBody] UpdateWalletRequestDto request)
-        {
-            if (request.Amount < 0)
-                return BadRequest(new ResponseModel<UserUpdateWalletDto> 
-                { 
-                    Success = false, 
-                    Error = "Amount cannot be negative", 
-                    ErrorCode = 400 
-                });
-                
-            try
-            {
-                var updatedAccount = await _accountService.UpdateWalletBalance(request.UserId, request.Amount);
-                
-                if (updatedAccount == null)
-                {
-                    return NotFound(new ResponseModel<UserUpdateWalletDto> 
-                    { 
-                        Success = false, 
-                        Error = $"Account with ID {request.UserId} not found", 
-                        ErrorCode = 404 
-                    });
-                }
-                
-                // Get account with role information
-                var accountWithRole = await _accountService.GetAccountByIdIncludeAsync(updatedAccount.Id);
-                
-                var walletUpdateDto = new UserUpdateWalletDto
-                {
-                    Id = updatedAccount.Id,
-                    Name = updatedAccount.Name,
-                    Wallet = updatedAccount.Wallet
-                };
-                
-                return Ok(new ResponseModel<UserUpdateWalletDto> 
-                { 
-                    Success = true, 
-                    Data = walletUpdateDto,
-                    Error = null,
-                    ErrorCode = 200
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new ResponseModel<UserUpdateWalletDto> 
-                { 
-                    Success = false, 
-                    Error = ex.Message, 
-                    ErrorCode = 500 
-                });
             }
         }
         #endregion

@@ -12,6 +12,5 @@ namespace BusinessObjects.Dtos.Bill
         public string? MovieName { get; set; }
         public DateTime ShowDateTime { get; set; }
         public string Status { get; set; }
-        public float AccountBalance { get; set; }
     }
 }
