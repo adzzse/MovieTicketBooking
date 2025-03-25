@@ -12,5 +12,10 @@ namespace Services.Interface
         Task<PurchaseTicketResponseDto> PurchaseTickets(int showtimeId, List<int> seatIds, int userId);
         Task<List<Bill>> GetBillsByAccountId(int accountId);
         Task<Boolean> CheckBill(int ticketId);
+        
+        // New methods for the updated flow
+        Task<ShoppingCartDto> AddTicketToCart(int ticketId, int? accountId);
+        Task<ShoppingCartDto> GetShoppingCart(List<int> ticketIds, int? accountId);
+        Task<PurchaseTicketResponseDto> ConfirmPurchase(ConfirmPurchaseDto confirmDto);
     }
 }

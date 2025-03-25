@@ -2,6 +2,7 @@
 using BusinessObjects.Dtos.Bill;
 using BusinessObjects.Dtos.Schema_Response;
 using BusinessObjects.Dtos.Ticket;
+using BusinessObjects.Mappers;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interface;
 using System.Security.Claims;
@@ -15,10 +16,9 @@ namespace MovieTicketBookingAPI.Controllers
 
     [ApiController]
     [Route("api/bills")]
-    public class BillController(IBillService billService, IAuthService authService) : ControllerBase
+    public class BillController(IBillService billService) : ControllerBase
     {
         private readonly IBillService _billService = billService;
-        private readonly IAuthService _authService = authService;
 
         [HttpGet]
         [ProducesResponseType(typeof(ResponseModel<IEnumerable<BillDto>>), StatusCodes.Status200OK)]
@@ -42,7 +42,7 @@ namespace MovieTicketBookingAPI.Controllers
                     });
                 }
                 
-                var billDtos = bills.Select(bill => MapToBillDto(bill)).ToList();
+                var billDtos = bills.Select(bill => BillMapper.MapToBillDto(bill)).ToList();
                 
                 return Ok(new ResponseModel<IEnumerable<BillDto>>()
                 {
@@ -82,7 +82,7 @@ namespace MovieTicketBookingAPI.Controllers
                         ErrorCode = 404
                     });
                     
-                var billDto = MapToBillDto(bill);
+                var billDto = BillMapper.MapToBillDto(bill);
                 
                 return Ok(new ResponseModel<BillDto>()
                 {
@@ -122,7 +122,7 @@ namespace MovieTicketBookingAPI.Controllers
                         ErrorCode = 404
                     });
                     
-                var billDtos = bills.Select(bill => MapToBillDto(bill)).ToList();
+                var billDtos = bills.Select(bill => BillMapper.MapToBillDto(bill)).ToList();
                 
                 return Ok(new ResponseModel<IEnumerable<BillDto>>()
                 {
@@ -182,7 +182,7 @@ namespace MovieTicketBookingAPI.Controllers
             try
             {
                 var createdBill = await _billService.Add(bill);
-                var billDto = MapToBillDto(createdBill);
+                var billDto = BillMapper.MapToBillDto(createdBill);
                 
                 return CreatedAtAction(nameof(GetById), new { id = createdBill.Id },
                     new ResponseModel<BillDto>()
@@ -255,7 +255,7 @@ namespace MovieTicketBookingAPI.Controllers
 
                 bill.Id = id;
                 await _billService.Update(bill);
-                var billDto = MapToBillDto(bill);
+                var billDto = BillMapper.MapToBillDto(bill);
                 
                 return Ok(new ResponseModel<BillDto>()
                 {
@@ -296,7 +296,7 @@ namespace MovieTicketBookingAPI.Controllers
                     });
 
                 await _billService.Delete(id);
-                var billDto = MapToBillDto(existingBill);
+                var billDto = BillMapper.MapToBillDto(existingBill);
                 
                 return Ok(new ResponseModel<BillDto>()
                 {
@@ -317,31 +317,99 @@ namespace MovieTicketBookingAPI.Controllers
                 });
             }
         }
-        
-        // Helper method to map Bill entity to BillDto
-        private BillDto MapToBillDto(Bill bill)
+
+        [HttpPost("cart/add/{ticketId}/{userId}")]
+        [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<ShoppingCartDto>>> AddToCart(int ticketId, int userId)
         {
-            return new BillDto
+            try
             {
-                Id = bill.Id,
-                AccountId = bill.AccountId,
-                AccountName = bill.Account?.Name,
-                TicketId = bill.TicketId,
-                Ticket = bill.Ticket == null ? null : new TicketDto
+                var cart = await _billService.AddTicketToCart(ticketId, userId);
+                
+                return Ok(new ResponseModel<ShoppingCartDto>
                 {
-                    Id = bill.Ticket.Id,
-                    SeatId = bill.Ticket.SeatId,
-                    SeatName = bill.Ticket.Seat?.SeatNumber ?? string.Empty,
-                    MovieName = bill.Ticket.Movie?.Name,
-                    ShowDateTime = bill.Ticket.Showtime?.ShowDateTime ?? DateTime.MinValue,
-                    Price = bill.Ticket.Price,
-                    Status = bill.Ticket.Status
-                },
-                Quantity = bill.Quantity,
-                TotalPrice = bill.TotalPrice,
-                PromotionId = bill.PromotionId,
-                TransactionStatus = bill.Transaction?.Status
-            };
+                    Success = true,
+                    Data = cart,
+                    ErrorCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseModel<ShoppingCartDto>
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    ErrorCode = 500
+                });
+            }
+        }
+
+        [HttpGet("cart/{userId}")]
+        [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<ShoppingCartDto>>> GetCart(int userId, [FromQuery] List<int> ticketIds)
+        {
+            try
+            {
+                var cart = await _billService.GetShoppingCart(ticketIds, userId);
+                
+                return Ok(new ResponseModel<ShoppingCartDto>
+                {
+                    Success = true,
+                    Data = cart,
+                    ErrorCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseModel<ShoppingCartDto>
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    ErrorCode = 500
+                });
+            }
+        }
+
+        [HttpPost("confirm")]
+        [ProducesResponseType(typeof(ResponseModel<PurchaseTicketResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ResponseModel<PurchaseTicketResponseDto>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseModel<PurchaseTicketResponseDto>), StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ResponseModel<PurchaseTicketResponseDto>>> ConfirmPurchase([FromBody] ConfirmPurchaseDto confirmDto)
+        {
+            try
+            {
+                if (!confirmDto.AccountId.HasValue)
+                {
+                    return BadRequest(new ResponseModel<PurchaseTicketResponseDto>
+                    {
+                        Success = false,
+                        Error = "User ID is required",
+                        ErrorCode = 400
+                    });
+                }
+
+                var result = await _billService.ConfirmPurchase(confirmDto);
+                
+                return Ok(new ResponseModel<PurchaseTicketResponseDto>
+                {
+                    Success = true,
+                    Data = result,
+                    ErrorCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResponseModel<PurchaseTicketResponseDto>
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    ErrorCode = 500
+                });
+            }
         }
     }
 }

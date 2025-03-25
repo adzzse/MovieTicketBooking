@@ -1,5 +1,6 @@
 ﻿using BusinessObjects;
 using BusinessObjects.Dtos.Bill;
+using BusinessObjects.Dtos.Ticket;
 using DataAccessLayers;
 using DataAccessLayers.UnitOfWork;
 using Services.Interface;
@@ -13,10 +14,13 @@ namespace Services.Service
     public class BillService : GenericService<Bill>, IBillService
     {
         private readonly IAccountService _accountService;
+        private readonly ITicketService _ticketService;
 
-        public BillService(IUnitOfWork unitOfWork, IAccountService accountRepository) : base(unitOfWork)
+        public BillService(IUnitOfWork unitOfWork, IAccountService accountRepository, ITicketService ticketService) 
+            : base(unitOfWork)
         {
             _accountService = accountRepository;
+            _ticketService = ticketService;
         }
 
         public async Task<PurchaseTicketResponseDto> PurchaseTickets(int showtimeId, List<int> seatIds, int userId)
@@ -33,58 +37,123 @@ namespace Services.Service
                 throw new Exception("Showtime not found");
             }
 
+            var movie = await _unitOfWork.MovieRepository.GetByIdAsync(showtime.MovieId);
+            if (movie == null)
+            {
+                throw new Exception($"Movie not found for showtime {showtimeId}");
+            }
+
             var seats = await _unitOfWork.SeatRepository.FindAsync(s => seatIds.Contains(s.Id));
             if (seats == null || !seats.Any())
             {
                 throw new Exception("Seats not found");
             }
 
-            var bills = new List<Bill>();
+            // Calculate total price before creating any records
             var totalPrice = 0;
+            var defaultPrice = 120000; // Consider moving this to configuration or calculate based on seat type/movie
 
-            foreach (var seat in seats)
-            {
-                var ticket = await _unitOfWork.TicketRepository.FindOneAsync(t =>
-                    t.ShowtimeId == showtimeId && t.SeatId == seat.Id);
-
-                if (ticket == null)
-                {
-                    throw new Exception($"Ticket not found for seat {seat.Id}");
-                }
-
-                bills.Add(new Bill
-                {
-                    AccountId = account.Id,
-                    TicketId = ticket.Id,
-                    Quantity = 1,
-                    TotalPrice = ticket.Price
-                });
-
-                totalPrice += ticket.Price;
-            }
-
-            if (account.Wallet < totalPrice)
+            // Check if user has enough balance
+            var requiredAmount = seatIds.Count * defaultPrice;
+            if (account.Wallet < requiredAmount)
             {
                 throw new Exception("Insufficient balance");
             }
 
-            account.Wallet -= totalPrice;
-            await _unitOfWork.AccountRepository.UpdateAsync(account);
-            await _unitOfWork.BillRepository.AddRangeAsync(bills);
-
+            // Begin creating all necessary records
+            var bills = new List<Bill>();
+            var tickets = new List<Ticket>();
             var transactions = new List<Transaction>();
-            foreach (var bill in bills)
-            {
-                transactions.Add(new Transaction
-                {
-                    BillId = bill.Id,
-                    TypeId = 1,
-                    Status = "Success"
-                });
-            }
 
-            await _unitOfWork.TransactionRepository.AddRangeAsync(transactions);
-            await _unitOfWork.SaveChangesAsync();
+            try
+            {
+                // Create tickets first
+                foreach (var seat in seats)
+                {
+                    // Check if ticket exists
+                    var existingTicket = await _unitOfWork.TicketRepository.FindOneAsync(t =>
+                        t.ShowtimeId == showtimeId && t.SeatId == seat.Id);
+
+                    if (existingTicket == null)
+                    {
+                        // Create new ticket
+                        var newTicket = new Ticket
+                        {
+                            MovieId = showtime.MovieId,
+                            SeatId = seat.Id,
+                            ShowtimeId = showtimeId,
+                            Price = defaultPrice,
+                            Status = 1 // Available ticket
+                        };
+
+                        // Add to database
+                        await _unitOfWork.TicketRepository.AddAsync(newTicket);
+                        
+                        // Save immediately to get the ticket ID
+                        await _unitOfWork.SaveChangesAsync();
+                        
+                        // Use the newly created ticket
+                        existingTicket = newTicket;
+                    }
+                    else if (existingTicket.Status == 0)
+                    {
+                        // Ticket exists but is already sold
+                        throw new Exception($"Seat {seat.SeatNumber} is already booked for this showtime.");
+                    }
+
+                    // Mark the ticket as sold
+                    existingTicket.Status = 0; // Sold ticket
+                    await _unitOfWork.TicketRepository.UpdateAsync(existingTicket);
+
+                    // Create bill for this ticket
+                    var bill = new Bill
+                    {
+                        AccountId = account.Id,
+                        TicketId = existingTicket.Id,
+                        Quantity = 1,
+                        TotalPrice = existingTicket.Price
+                    };
+                    
+                    bills.Add(bill);
+                    totalPrice += existingTicket.Price;
+                    tickets.Add(existingTicket);
+                }
+
+                // Add all bills to database
+                await _unitOfWork.BillRepository.AddRangeAsync(bills);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Create transactions for each bill
+                foreach (var bill in bills)
+                {
+                    transactions.Add(new Transaction
+                    {
+                        BillId = bill.Id,
+                        TypeId = 1,
+                        Status = "Success"
+                    });
+                }
+
+                // Add transactions
+                await _unitOfWork.TransactionRepository.AddRangeAsync(transactions);
+
+                // Update user's wallet
+                account.Wallet -= totalPrice;
+                await _unitOfWork.AccountRepository.UpdateAsync(account);
+
+                // Update showtime available seats
+                showtime.AvailableSeats -= seatIds.Count;
+                await _unitOfWork.ShowTimeRepository.UpdateAsync(showtime);
+
+                // Save all changes
+                await _unitOfWork.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                Console.WriteLine($"Error during ticket purchase: {ex.Message}");
+                throw new Exception($"Failed to complete purchase: {ex.Message}");
+            }
 
             return new PurchaseTicketResponseDto
             {
@@ -108,6 +177,173 @@ namespace Services.Service
                 return false;
             }
             return true;
+        }
+
+        public async Task<ShoppingCartDto> AddTicketToCart(int ticketId, int? accountId)
+        {
+            var ticket = await _ticketService.GetByIdInclude(ticketId);
+            if (ticket == null)
+            {
+                throw new Exception("Ticket not found");
+            }
+
+            if (ticket.Status != 1) // 1 means available
+            {
+                throw new Exception("Ticket is not available");
+            }
+
+            var cart = new ShoppingCartDto
+            {
+                AccountId = accountId,
+                Tickets = new List<TicketDto>
+                {
+                    new TicketDto
+                    {
+                        Id = ticket.Id,
+                        SeatId = ticket.SeatId,
+                        SeatName = ticket.Seat?.SeatNumber ?? "Unknown",
+                        MovieName = ticket.Movie?.Name,
+                        ShowDateTime = ticket.Showtime?.ShowDateTime ?? DateTime.MinValue,
+                        Price = ticket.Price,
+                        Status = ticket.Status
+                    }
+                },
+                TotalPrice = ticket.Price
+            };
+
+            return cart;
+        }
+
+        public async Task<ShoppingCartDto> GetShoppingCart(List<int> ticketIds, int? accountId)
+        {
+            var tickets = new List<TicketDto>();
+            var totalPrice = 0;
+
+            foreach (var ticketId in ticketIds)
+            {
+                var ticket = await _ticketService.GetByIdInclude(ticketId);
+                if (ticket == null)
+                {
+                    throw new Exception($"Ticket {ticketId} not found");
+                }
+
+                if (ticket.Status != 1) // 1 means available
+                {
+                    throw new Exception($"Ticket {ticketId} is not available");
+                }
+
+                tickets.Add(new TicketDto
+                {
+                    Id = ticket.Id,
+                    SeatId = ticket.SeatId,
+                    SeatName = ticket.Seat?.SeatNumber ?? "Unknown",
+                    MovieName = ticket.Movie?.Name,
+                    ShowDateTime = ticket.Showtime?.ShowDateTime ?? DateTime.MinValue,
+                    Price = ticket.Price,
+                    Status = ticket.Status
+                });
+
+                totalPrice += ticket.Price;
+            }
+
+            return new ShoppingCartDto
+            {
+                AccountId = accountId,
+                Tickets = tickets,
+                TotalPrice = totalPrice
+            };
+        }
+
+        public async Task<PurchaseTicketResponseDto> ConfirmPurchase(ConfirmPurchaseDto confirmDto)
+        {
+            var account = confirmDto.AccountId.HasValue 
+                ? await _unitOfWork.AccountRepository.GetByIdAsync(confirmDto.AccountId.Value)
+                : null;
+
+            if (account == null)
+            {
+                throw new Exception("User account not found");
+            }
+
+            var tickets = new List<Ticket>();
+            var totalPrice = 0;
+
+            // Verify all tickets are available
+            foreach (var ticketId in confirmDto.TicketIds)
+            {
+                var ticket = await _ticketService.GetByIdInclude(ticketId);
+                if (ticket == null)
+                {
+                    throw new Exception($"Ticket {ticketId} not found");
+                }
+
+                if (ticket.Status != 1) // 1 means available
+                {
+                    throw new Exception($"Ticket {ticketId} is not available");
+                }
+
+                tickets.Add(ticket);
+                totalPrice += ticket.Price;
+            }
+
+            try
+            {
+                var bills = new List<Bill>();
+                var transactions = new List<Transaction>();
+
+                // Create bills and update tickets
+                foreach (var ticket in tickets)
+                {
+                    // Update ticket status based on payment status
+                    ticket.Status = (byte)confirmDto.Status;
+                    await _unitOfWork.TicketRepository.UpdateAsync(ticket);
+
+                    // Create bill
+                    var bill = new Bill
+                    {
+                        AccountId = account.Id,
+                        TicketId = ticket.Id,
+                        Quantity = 1,
+                        TotalPrice = ticket.Price
+                    };
+                    
+                    bills.Add(bill);
+                }
+
+                // Add all bills to database
+                await _unitOfWork.BillRepository.AddRangeAsync(bills);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Create transactions
+                foreach (var bill in bills)
+                {
+                    transactions.Add(new Transaction
+                    {
+                        BillId = bill.Id,
+                        TypeId = 1,
+                        Status = confirmDto.Status == PaymentStatus.Success ? "Success" : "Failed"
+                    });
+                }
+
+                // Add transactions
+                await _unitOfWork.TransactionRepository.AddRangeAsync(transactions);
+
+                // Save all changes
+                await _unitOfWork.SaveChangesAsync();
+
+                return new PurchaseTicketResponseDto
+                {
+                    Status = confirmDto.Status == PaymentStatus.Success ? "Success" : "Failed",
+                    TotalPrice = totalPrice,
+                    AccountBalance = 0 // No longer using wallet balance
+                };
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                Console.WriteLine($"Error during ticket purchase: {ex.Message}");
+                throw new Exception($"Failed to complete purchase: {ex.Message}");
+            }
         }
     }
 }

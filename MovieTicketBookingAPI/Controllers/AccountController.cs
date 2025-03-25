@@ -105,6 +105,17 @@ namespace MovieTicketBookingAPI.Controllers
         {
             if (accountDto == null)
                 return BadRequest(new ResponseModel<AccountResponseBasic> { Success = false, Error = "Invalid account data", ErrorCode = 400 });
+            
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ResponseModel<AccountResponseBasic> 
+                { 
+                    Success = false, 
+                    Error = "One or more validation errors occurred", 
+                    ErrorCode = 400
+                });
+            }
+            
             try
             {
                 var account = new Account
@@ -112,8 +123,8 @@ namespace MovieTicketBookingAPI.Controllers
                     Name = accountDto.Name,
                     Email = accountDto.Email,
                     Password = accountDto.Password,
-                    Address = accountDto.Address,
-                    Phone = accountDto.Phone,
+                    Address = accountDto.Address ?? "",
+                    Phone = accountDto.Phone ?? "",
                     RoleId = accountDto.RoleId,
                     Status = 1,
                     Wallet = accountDto.Wallet
