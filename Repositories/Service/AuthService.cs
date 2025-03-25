@@ -5,6 +5,7 @@ using Services.Interface;
 using System;
 using System.Threading.Tasks;
 using DataAccessLayers.UnitOfWork;
+using System.Text.RegularExpressions;
 
 namespace Services.Service
 {
@@ -24,19 +25,51 @@ namespace Services.Service
 
         public async Task<Account> Register(RegisterDto registerDto)
         {
-            if (await _unitOfWork.AccountRepository.GetSystemAccountByAccountEmail(registerDto.Email) != null)
-                throw new Exception("Email is already registered.");
+            // Email format validation
+            if (string.IsNullOrEmpty(registerDto.Email) || !IsValidEmail(registerDto.Email))
+                throw new Exception("Invalid email format.");
 
-            var newAccount = new Account
+            // Normalize email to lowercase for consistent comparisons
+            registerDto.Email = registerDto.Email.Trim().ToLowerInvariant();
+
+            // Check if email already exists - improved check
+            var existingAccount = await _unitOfWork.AccountRepository.GetSystemAccountByAccountEmail(registerDto.Email);
+            if (existingAccount != null)
             {
-                Email = registerDto.Email,
-                Password = registerDto.Password,
-                Name = registerDto.FullName,
-                RoleId = registerDto.RoleId,
-            };
+                throw new Exception("Email is already registered.");
+            }
+            
+            // Double-check with direct query to ensure email is unique
+            try
+            {
+                // Password check
+                if (string.IsNullOrEmpty(registerDto.Password) || registerDto.Password.Length < 6)
+                    throw new Exception("Password must be at least 6 characters long.");
 
-            await _accountService.Add(newAccount);
-            return newAccount;
+                var newAccount = new Account
+                {
+                    Email = registerDto.Email,
+                    Password = registerDto.Password,
+                    Name = registerDto.FullName,
+                    RoleId = registerDto.RoleId,
+                };
+
+                await _accountService.Add(newAccount);
+                return newAccount;
+            }
+            catch (Exception ex) when (ex.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase) || 
+                                      ex.Message.Contains("unique", StringComparison.OrdinalIgnoreCase) || 
+                                      ex.Message.Contains("constraint", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception("Email is already registered.", ex);
+            }
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            // Simple email validation regex
+            string pattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+            return Regex.IsMatch(email, pattern);
         }
 
         public async Task<Account> GetUserById(int userId)

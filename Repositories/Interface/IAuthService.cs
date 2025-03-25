@@ -13,7 +13,7 @@ namespace Services.Interface
     {
         Task<AuthResponseDto> Login(LoginDto loginDto);
         Task<Account> Register(RegisterDto registerDto);
-        Task<Account> GetUserByClaims(ClaimsPrincipal claims);
+        Task<Account> GetUserById(int userId);
         Task<Account> GetAccountByEmail(string email);
     }
 }
