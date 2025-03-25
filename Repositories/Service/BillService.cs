@@ -53,13 +53,6 @@ namespace Services.Service
             var totalPrice = 0;
             var defaultPrice = 120000; // Consider moving this to configuration or calculate based on seat type/movie
 
-            // Check if user has enough balance
-            var requiredAmount = seatIds.Count * defaultPrice;
-            if (account.Wallet < requiredAmount)
-            {
-                throw new Exception("Insufficient balance");
-            }
-
             // Begin creating all necessary records
             var bills = new List<Bill>();
             var tickets = new List<Ticket>();
@@ -137,10 +130,6 @@ namespace Services.Service
                 // Add transactions
                 await _unitOfWork.TransactionRepository.AddRangeAsync(transactions);
 
-                // Update user's wallet
-                account.Wallet -= totalPrice;
-                await _unitOfWork.AccountRepository.UpdateAsync(account);
-
                 // Update showtime available seats
                 showtime.AvailableSeats -= seatIds.Count;
                 await _unitOfWork.ShowTimeRepository.UpdateAsync(showtime);
@@ -159,7 +148,6 @@ namespace Services.Service
             {
                 Status = "Success",
                 TotalPrice = totalPrice,
-                AccountBalance = account.Wallet
             };
         }
 
@@ -265,6 +253,27 @@ namespace Services.Service
                 throw new Exception("User account not found");
             }
 
+            // Determine payment status from the PaymentReference
+            PaymentStatus paymentStatus;
+            if (string.IsNullOrEmpty(confirmDto.PaymentReference))
+            {
+                throw new Exception("Payment reference is required");
+            }
+            
+            // Check if payment reference indicates success
+            if (confirmDto.PaymentReference.Contains("success"))
+            {
+                paymentStatus = PaymentStatus.Success;
+            }
+            else if (confirmDto.PaymentReference.Contains("cancel"))
+            {
+                paymentStatus = PaymentStatus.Cancel;
+            }
+            else
+            {
+                paymentStatus = PaymentStatus.Error;
+            }
+
             var tickets = new List<Ticket>();
             var totalPrice = 0;
 
@@ -295,7 +304,7 @@ namespace Services.Service
                 foreach (var ticket in tickets)
                 {
                     // Update ticket status based on payment status
-                    ticket.Status = (byte)confirmDto.Status;
+                    ticket.Status = (byte)paymentStatus;
                     await _unitOfWork.TicketRepository.UpdateAsync(ticket);
 
                     // Create bill
@@ -321,7 +330,7 @@ namespace Services.Service
                     {
                         BillId = bill.Id,
                         TypeId = 1,
-                        Status = confirmDto.Status == PaymentStatus.Success ? "Success" : "Failed"
+                        Status = paymentStatus == PaymentStatus.Success ? "Success" : "Failed"
                     });
                 }
 
@@ -333,9 +342,8 @@ namespace Services.Service
 
                 return new PurchaseTicketResponseDto
                 {
-                    Status = confirmDto.Status == PaymentStatus.Success ? "Success" : "Failed",
-                    TotalPrice = totalPrice,
-                    AccountBalance = 0 // No longer using wallet balance
+                    Status = paymentStatus == PaymentStatus.Success ? "Success" : "Failed",
+                    TotalPrice = totalPrice
                 };
             }
             catch (Exception ex)

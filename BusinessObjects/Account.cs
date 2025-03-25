@@ -13,7 +13,6 @@ public class Account
     public byte? Status { get; set; }
     public string Password { get; set; }
     public string Email { get; set; }
-    public float Wallet { get; set; }
 
     public virtual Role? Role { get; set; }
     public virtual ICollection<Bill> Bills { get; set; } = new List<Bill>();

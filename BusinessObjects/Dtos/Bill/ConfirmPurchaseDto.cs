@@ -15,6 +15,5 @@ namespace BusinessObjects.Dtos.Bill
         public List<int> TicketIds { get; set; } = new List<int>();
         public int? AccountId { get; set; }
         public string? PaymentReference { get; set; }
-        public PaymentStatus Status { get; set; }
     }
 } 

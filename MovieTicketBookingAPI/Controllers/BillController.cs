@@ -5,7 +5,6 @@ using BusinessObjects.Dtos.Ticket;
 using BusinessObjects.Mappers;
 using Microsoft.AspNetCore.Mvc;
 using Services.Interface;
-using System.Security.Claims;
 
 namespace MovieTicketBookingAPI.Controllers
 {
@@ -321,13 +320,13 @@ namespace MovieTicketBookingAPI.Controllers
         [HttpPost("cart/add/{ticketId}/{userId}")]
         [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ResponseModel<ShoppingCartDto>>> AddToCart(int ticketId, int userId)
         {
             try
             {
                 var cart = await _billService.AddTicketToCart(ticketId, userId);
-                
                 return Ok(new ResponseModel<ShoppingCartDto>
                 {
                     Success = true,
@@ -349,13 +348,13 @@ namespace MovieTicketBookingAPI.Controllers
         [HttpGet("cart/{userId}")]
         [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ResponseModel<ShoppingCartDto>), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ResponseModel<ShoppingCartDto>>> GetCart(int userId, [FromQuery] List<int> ticketIds)
         {
             try
             {
                 var cart = await _billService.GetShoppingCart(ticketIds, userId);
-                
                 return Ok(new ResponseModel<ShoppingCartDto>
                 {
                     Success = true,
